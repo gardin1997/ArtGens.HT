@@ -60,21 +60,25 @@ export function ArtworkProvider({ children }) {
   }, [state.token]);
 
   const fetchArtworks = async (filters = {}) => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
+  dispatch({ type: 'SET_LOADING', payload: true });
+  try {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.append(key, value);
+    });
 
-      const response = await axios.get(`http://localhost:5555/api/artworks?${params}`);
-      dispatch({ type: 'SET_ARTWORKS', payload: response.data });
-    } catch (error) {
-      console.error('Error fetching artworks:', error);
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
+    const response = await axios.get(`http://localhost:5555/api/artworks?${params}`);
+    
+    // CORRECTION : S'assurer que response.data est toujours défini
+    dispatch({ type: 'SET_ARTWORKS', payload: response.data || [] });
+  } catch (error) {
+    console.error('Error fetching artworks:', error);
+    // CORRECTION : En cas d'erreur, mettre un tableau vide
+    dispatch({ type: 'SET_ARTWORKS', payload: [] });
+  } finally {
+    dispatch({ type: 'SET_LOADING', payload: false });
+  }
+};
 
   const login = async (email, password) => {
     try {

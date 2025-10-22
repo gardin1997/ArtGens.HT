@@ -121,7 +121,8 @@ function ArtworkDetail() {
             <div style={categoriesStyle}>
               <h3>Catégories</h3>
               <div style={tagsStyle}>
-                {artwork.categories.map(cat => (
+                {/* CORRECTION APPLIQUÉE ICI : (artwork.categories || []) */}
+                {(artwork.categories || []).map(cat => (
                   <span key={cat} style={tagStyle}>{cat}</span>
                 ))}
               </div>
@@ -129,7 +130,7 @@ function ArtworkDetail() {
             
             <div style={statsStyle}>
               <span style={statStyle}>
-                ❤️ {artwork.likes_count} likes
+                ❤️ {artwork.likes_count || 0} likes
               </span>
               <span style={statStyle}>
                 📅 Ajoutée le {new Date(artwork.created_at).toLocaleDateString()}
@@ -141,7 +142,7 @@ function ArtworkDetail() {
                 onClick={handleLike}
                 style={isLiked ? likedButtonStyle : likeButtonStyle}
               >
-                {isLiked ? '❤️ Liké' : '🤍 Like'} ({artwork.likes_count})
+                {isLiked ? '❤️ Liké' : '🤍 Like'} ({artwork.likes_count || 0})
               </button>
               
               {artwork.is_available ? (
@@ -179,6 +180,8 @@ function ArtworkDetail() {
     </div>
   );
 }
+
+// ... (gardez tous les styles existants, ils sont corrects)
 
 const containerStyle = { 
   padding: '2rem 0',

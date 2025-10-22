@@ -1,140 +1,166 @@
 import React, { useState } from 'react';
 
-function SearchFilters({ onFilter }) {
+function SearchFilters({ onFilterChange, onSearch }) {
   const [filters, setFilters] = useState({
-    title: '',
+    search: '',
     category: '',
-    min_price: '',
-    max_price: '',
-    artist: ''
+    minPrice: '',
+    maxPrice: ''
   });
 
-  const handleChange = (e) => {
+  const handleChange = (name, value) => {
     const newFilters = {
       ...filters,
-      [e.target.name]: e.target.value
+      [name]: value
     };
     setFilters(newFilters);
-    onFilter(newFilters);
+    if (onFilterChange) {
+      onFilterChange(newFilters);
+    }
   };
 
-  const clearFilters = () => {
-    const emptyFilters = {
-      title: '',
+  const handleReset = () => {
+    const resetFilters = {
+      search: '',
       category: '',
-      min_price: '',
-      max_price: '',
-      artist: ''
+      minPrice: '',
+      maxPrice: ''
     };
-    setFilters(emptyFilters);
-    onFilter(emptyFilters);
+    setFilters(resetFilters);
+    if (onFilterChange) {
+      onFilterChange(resetFilters);
+    }
+    if (onSearch) {
+      onSearch();
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (onSearch) {
+      onSearch();
+    }
   };
 
   return (
     <div style={filtersContainerStyle}>
       <h3 style={titleStyle}>Filtrer les œuvres</h3>
       
-      <div style={filtersGridStyle}>
-        <input
-          type="text"
-          name="title"
-          placeholder="Rechercher par titre..."
-          value={filters.title}
-          onChange={handleChange}
-          style={inputStyle}
-        />
-        
-        <input
-          type="text"
-          name="artist"
-          placeholder="Rechercher par artiste..."
-          value={filters.artist}
-          onChange={handleChange}
-          style={inputStyle}
-        />
-        
-        <input
-          type="number"
-          name="min_price"
-          placeholder="Prix minimum ($)"
-          value={filters.min_price}
-          onChange={handleChange}
-          style={inputStyle}
-        />
-        
-        <input
-          type="number"
-          name="max_price"
-          placeholder="Prix maximum ($)"
-          value={filters.max_price}
-          onChange={handleChange}
-          style={inputStyle}
-        />
-        
-        <select
-          name="category"
-          value={filters.category}
-          onChange={handleChange}
-          style={selectStyle}
-        >
-          <option value="">Toutes les catégories</option>
-          <option value="Peinture">Peinture</option>
-          <option value="Portrait">Portrait</option>
-          <option value="Artisanat">Artisanat</option>
-          <option value="Poterie">Poterie</option>
-          <option value="Sculpture">Sculpture</option>
-          <option value="Photographie">Photographie</option>
-        </select>
-        
-        <button onClick={clearFilters} style={clearButtonStyle}>
-          Effacer
-        </button>
-      </div>
+      <form onSubmit={handleSubmit}>
+        <div style={filterGroupStyle}>
+          <input
+            type="text"
+            placeholder="Rechercher par titre..."
+            value={filters.search}
+            onChange={(e) => handleChange('search', e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+
+        <div style={filterGroupStyle}>
+          <input
+            type="number"
+            placeholder="Prix minimum"
+            value={filters.minPrice}
+            onChange={(e) => handleChange('minPrice', e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+
+        <div style={filterGroupStyle}>
+          <input
+            type="number"
+            placeholder="Prix maximum"
+            value={filters.maxPrice}
+            onChange={(e) => handleChange('maxPrice', e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+
+        <div style={filterGroupStyle}>
+          <select
+            value={filters.category}
+            onChange={(e) => handleChange('category', e.target.value)}
+            style={inputStyle}
+          >
+            <option value="">Toutes les catégories</option>
+            <option value="Peinture">Peinture</option>
+            <option value="Sculpture">Sculpture</option>
+            <option value="Photographie">Photographie</option>
+            <option value="Portrait">Portrait</option>
+            <option value="Artisanat">Artisanat</option>
+            <option value="Poterie">Poterie</option>
+          </select>
+        </div>
+
+        <div style={buttonsContainerStyle}>
+          <button type="submit" style={searchButtonStyle}>
+            🔍 Appliquer les filtres
+          </button>
+          
+          <button type="button" onClick={handleReset} style={resetButtonStyle}>
+            Enlever les filtres
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
 
+// TOUS LES STYLES DÉFINIS CI-DESSOUS
 const filtersContainerStyle = {
   backgroundColor: 'white',
-  padding: '2rem',
-  borderRadius: '10px',
-  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-  marginBottom: '2rem'
+  padding: '25px',
+  borderRadius: '8px',
+  marginBottom: '30px',
+  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
 };
 
 const titleStyle = {
-  marginBottom: '1rem',
-  color: '#00209f'
+  marginBottom: '20px',
+  color: '#333',
+  fontSize: '20px'
 };
 
-const filtersGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-  gap: '1rem',
-  alignItems: 'end'
+const filterGroupStyle = {
+  marginBottom: '15px'
 };
 
 const inputStyle = {
-  padding: '0.75rem',
+  width: '100%',
+  padding: '12px',
   border: '1px solid #ddd',
-  borderRadius: '5px',
-  fontSize: '1rem',
-  width: '100%'
+  borderRadius: '4px',
+  fontSize: '14px',
+  boxSizing: 'border-box'
 };
 
-const selectStyle = {
-  ...inputStyle,
-  backgroundColor: 'white'
+const buttonsContainerStyle = {
+  display: 'flex',
+  gap: '15px',
+  marginTop: '20px'
 };
 
-const clearButtonStyle = {
-  padding: '0.75rem 1.5rem',
+const searchButtonStyle = {
+  backgroundColor: '#00209f',
+  color: 'white',
+  border: 'none',
+  padding: '12px 20px',
+  borderRadius: '4px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  flex: 2
+};
+
+const resetButtonStyle = {
   backgroundColor: '#6c757d',
   color: 'white',
   border: 'none',
-  borderRadius: '5px',
+  padding: '12px 20px',
+  borderRadius: '4px',
   cursor: 'pointer',
-  fontSize: '1rem'
+  fontSize: '14px',
+  flex: 1
 };
 
 export default SearchFilters;

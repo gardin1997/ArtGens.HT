@@ -1,18 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useArtwork } from '../context/ArtworkContext';
 import { Link } from 'react-router-dom';
 import SearchFilters from '../components/SearchFilters';
 
 function Home() {
-  const { artworks, fetchArtworks, loading, user, likeArtwork } = useArtwork();
+  const { artworks, loading, fetchArtworks, user, likeArtwork } = useArtwork();
   const [filters, setFilters] = useState({});
 
+  // Chargement initial
   useEffect(() => {
-    fetchArtworks(filters);
-  }, [filters]);
+    fetchArtworks({});
+  }, []);
 
-  const handleFilter = (newFilters) => {
+  const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
+  };
+
+  const handleSearch = () => {
+    fetchArtworks(filters);
   };
 
   const handleLike = async (artworkId) => {
@@ -26,218 +31,202 @@ function Home() {
   if (loading) {
     return (
       <div style={loadingStyle}>
-        <div style={spinnerStyle}></div>
-        <p>Chargement des œuvres...</p>
+        <div style={spinnerStyle}>Chargement...</div>
       </div>
     );
   }
 
+  // CORRECTION : Vérifier que artworks existe et est un tableau
+  const displayArtworks = artworks || [];
+
   return (
     <div style={containerStyle}>
-      <div className="container">
-        <header style={headerStyle}>
-          <h1 style={titleStyle}>ArtGens.HT</h1>
-          <p style={subtitleStyle}>
-            Découvrez et achetez des œuvres d'art exceptionnelles 
-            d'artistes haïtiens talentueux
-          </p>
-        </header>
+      <div style={headerStyle}>
+        <h1 style={titleStyle}>ArtGens.HT</h1>
+        <p style={subtitleStyle}>
+          Découvrez et achetez des œuvres d'art exceptionnelles d'artistes haïtiens talentueux.
+        </p>
+      </div>
 
-        <SearchFilters onFilter={handleFilter} />
+      <SearchFilters 
+        onFilterChange={handleFilterChange} 
+        onSearch={handleSearch} 
+      />
 
-        <div style={gridStyle}>
-          {artworks.map(artwork => (
-            <div key={artwork.id} className="card" style={cardStyle}>
-              <div style={imageContainerStyle}>
+      {/* CORRECTION : Utiliser displayArtworks au lieu de artworks */}
+      {displayArtworks.length === 0 ? (
+        <div style={noArtworkStyle}>
+          <h3>Aucune œuvre trouvée</h3>
+          <p>Essayez de modifier vos critères de recherche.</p>
+        </div>
+      ) : (
+        <div style={artworksGridStyle}>
+          {/* CORRECTION : Utiliser displayArtworks.map() */}
+          {displayArtworks.map(artwork => (
+            <div key={artwork.id} style={artworkCardStyle}>
+              <Link to={`/artwork/${artwork.id}`} style={linkStyle}>
                 <img 
                   src={artwork.image_url || '/placeholder-image.jpg'} 
                   alt={artwork.title}
                   style={imageStyle}
+                  onError={(e) => {
+                    e.target.src = '/placeholder-image.jpg';
+                  }}
                 />
-                <div style={overlayStyle}>
-                  <button 
-                    onClick={() => handleLike(artwork.id)}
-                    style={likeButtonStyle}
-                  >
-                    ❤️ {artwork.likes_count}
-                  </button>
+                <div style={artworkInfoStyle}>
+                  <h3 style={artworkTitleStyle}>{artwork.title}</h3>
+                  <p style={artistStyle}>Par {artwork.artist_name}</p>
+                  <p style={priceStyle}>${artwork.price}</p>
+                  <div style={likesStyle}>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleLike(artwork.id);
+                      }}
+                      style={likeButtonStyle}
+                    >
+                      ❤️ {artwork.likes_count || 0}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              
-              <div style={infoStyle}>
-                <h3 style={artworkTitleStyle}>{artwork.title}</h3>
-                <p style={artistStyle}>Par {artwork.artist_name}</p>
-                <p style={priceStyle}>${artwork.price}</p>
-                <div style={categoriesStyle}>
-                  {artwork.categories.map(cat => (
-                    <span key={cat} style={categoryTagStyle}>{cat}</span>
-                  ))}
-                </div>
-                <Link 
-                  to={`/artwork/${artwork.id}`} 
-                  style={detailsButtonStyle}
-                >
-                  Voir détails
-                </Link>
-              </div>
+              </Link>
             </div>
           ))}
         </div>
-
-        {artworks.length === 0 && !loading && (
-          <div style={emptyStateStyle}>
-            <h3>Aucune œuvre trouvée</h3>
-            <p>Essayez de modifier vos critères de recherche</p>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
 
-const containerStyle = { 
-  padding: '2rem 0',
-  minHeight: 'calc(100vh - 70px)'
-};
-
-const headerStyle = {
-  textAlign: 'center',
-  marginBottom: '3rem'
-};
-
-const titleStyle = {
-  fontSize: '3rem',
-  color: '#00209f',
-  marginBottom: '1rem'
-};
-
-const subtitleStyle = {
-  fontSize: '1.2rem',
-  color: '#6c757d',
-  maxWidth: '600px',
-  margin: '0 auto'
-};
-
-const gridStyle = { 
-  display: 'grid', 
-  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-  gap: '2rem' 
-};
-
-const cardStyle = { 
-  transition: 'all 0.3s ease' 
-};
-
-const imageContainerStyle = {
-  position: 'relative',
-  overflow: 'hidden'
-};
-
-const imageStyle = { 
-  width: '100%', 
-  height: '250px', 
-  objectFit: 'cover',
-  transition: 'transform 0.3s ease'
-};
-
-const overlayStyle = {
-  position: 'absolute',
-  top: '10px',
-  right: '10px'
-};
-
-const likeButtonStyle = {
-  background: 'rgba(255, 255, 255, 0.9)',
-  border: 'none',
-  borderRadius: '20px',
-  padding: '0.5rem 1rem',
-  cursor: 'pointer',
-  fontSize: '0.9rem',
-  boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-};
-
-const infoStyle = { 
-  padding: '1.5rem' 
-};
-
-const artworkTitleStyle = {
-  fontSize: '1.2rem',
-  marginBottom: '0.5rem',
-  color: '#333'
-};
-
-const artistStyle = {
-  color: '#666',
-  marginBottom: '0.5rem',
-  fontSize: '0.9rem'
-};
-
-const priceStyle = {
-  fontSize: '1.5rem',
-  fontWeight: 'bold',
-  color: '#00209f',
-  marginBottom: '1rem'
-};
-
-const categoriesStyle = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.5rem',
-  marginBottom: '1rem'
-};
-
-const categoryTagStyle = {
-  backgroundColor: '#e9ecef',
-  color: '#495057',
-  padding: '0.25rem 0.5rem',
-  borderRadius: '15px',
-  fontSize: '0.8rem'
-};
-
-const detailsButtonStyle = {
-  display: 'block',
-  textAlign: 'center',
-  padding: '0.75rem',
-  backgroundColor: '#00209f',
-  color: 'white',
-  textDecoration: 'none',
-  borderRadius: '5px',
-  transition: 'background-color 0.3s ease'
+// Styles
+const containerStyle = {
+  minHeight: '100vh',
+  padding: '90px 20px 20px 20px',
+  backgroundColor: '#f8f9fa',
+  fontFamily: 'Arial, sans-serif'
 };
 
 const loadingStyle = {
   display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
   justifyContent: 'center',
-  padding: '4rem',
+  alignItems: 'center',
+  height: '50vh',
+  fontSize: '18px',
   color: '#666'
 };
 
 const spinnerStyle = {
-  width: '50px',
-  height: '50px',
-  border: '5px solid #f3f3f3',
-  borderTop: '5px solid #00209f',
-  borderRadius: '50%',
-  animation: 'spin 1s linear infinite',
-  marginBottom: '1rem'
+  padding: '20px'
 };
 
-const emptyStateStyle = {
+const headerStyle = {
   textAlign: 'center',
-  padding: '4rem',
+  padding: '40px 20px',
+  backgroundColor: 'white',
+  marginBottom: '30px',
+  borderRadius: '10px',
+  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+};
+
+const titleStyle = {
+  fontSize: '36px',
+  color: '#00209f',
+  marginBottom: '15px',
+  fontWeight: 'bold'
+};
+
+const subtitleStyle = {
+  fontSize: '16px',
+  color: '#666',
+  maxWidth: '600px',
+  margin: '0 auto',
+  lineHeight: '1.5'
+};
+
+const noArtworkStyle = {
+  textAlign: 'center',
+  padding: '60px 30px',
+  color: '#666',
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  margin: '30px auto',
+  maxWidth: '500px',
+  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+};
+
+const artworksGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+  gap: '25px',
+  padding: '0 20px 30px 20px',
+  maxWidth: '1200px',
+  margin: '0 auto'
+};
+
+const artworkCardStyle = {
+  backgroundColor: 'white',
+  borderRadius: '8px',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+  overflow: 'hidden',
+  transition: 'all 0.3s ease'
+};
+
+const linkStyle = {
+  textDecoration: 'none',
+  color: 'inherit',
+  display: 'block',
+  height: '100%'
+};
+
+const imageStyle = {
+  width: '100%',
+  height: '200px',
+  objectFit: 'cover',
+  borderBottom: '1px solid #eee'
+};
+
+const artworkInfoStyle = {
+  padding: '20px'
+};
+
+const artworkTitleStyle = {
+  fontSize: '18px',
+  margin: '0 0 10px 0',
+  color: '#333',
+  fontWeight: '600'
+};
+
+const artistStyle = {
+  margin: '0 0 15px 0',
+  color: '#666',
+  fontSize: '14px'
+};
+
+const priceStyle = {
+  fontSize: '20px',
+  fontWeight: 'bold',
+  color: '#00209f',
+  margin: '0 0 15px 0'
+};
+
+const likesStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  borderTop: '1px solid #eee',
+  paddingTop: '15px'
+};
+
+const likeButtonStyle = {
+  backgroundColor: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  fontSize: '14px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '5px',
+  padding: '5px 10px',
+  borderRadius: '4px',
   color: '#666'
 };
-
-// Animation CSS pour le spinner
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-document.head.appendChild(style);
 
 export default Home;
