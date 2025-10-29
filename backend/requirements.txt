@@ -6,4 +6,5 @@ Flask-JWT-Extended==4.5.3
 cloudinary==1.36.0
 stripe==5.5.0
 PyJWT==2.8.0
-Werkzeug==2.3.7gunicorn
+Werkzeug==2.3.7
+gunicorn==23.0.0
