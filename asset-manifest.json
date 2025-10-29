@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/ArtGens.HT/static/css/main.4346f67f.css",
+    "main.js": "/ArtGens.HT/static/js/main.e662fdd8.js",
+    "static/js/453.d7446e4a.chunk.js": "/ArtGens.HT/static/js/453.d7446e4a.chunk.js",
+    "index.html": "/ArtGens.HT/index.html",
+    "main.4346f67f.css.map": "/ArtGens.HT/static/css/main.4346f67f.css.map",
+    "main.e662fdd8.js.map": "/ArtGens.HT/static/js/main.e662fdd8.js.map",
+    "453.d7446e4a.chunk.js.map": "/ArtGens.HT/static/js/453.d7446e4a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.4346f67f.css",
+    "static/js/main.e662fdd8.js"
+  ]
+}
