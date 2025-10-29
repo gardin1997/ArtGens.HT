@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import axios from 'axios';
 
+
+
 const ArtworkContext = createContext();
+const API_URL = 'http://127.0.0.1:5555/api';
+
 
 const initialState = {
   artworks: [],
@@ -10,6 +14,8 @@ const initialState = {
   loading: false,
   token: localStorage.getItem('token')
 };
+
+
 
 function artworkReducer(state, action) {
   switch (action.type) {
@@ -21,93 +27,110 @@ function artworkReducer(state, action) {
       return { ...state, user: action.payload };
     case 'LOGIN_SUCCESS':
       localStorage.setItem('token', action.payload.token);
-      return { 
-        ...state, 
+      return {
+        ...state,
         user: action.payload.user,
         token: action.payload.token
       };
     case 'LOGOUT':
       localStorage.removeItem('token');
-      return { 
-        ...state, 
-        user: null, 
-        token: null,
-        cart: []
-      };
-    case 'ADD_TO_CART':
-      return { ...state, cart: [...state.cart, action.payload] };
-    case 'REMOVE_FROM_CART':
-      return { 
-        ...state, 
-        cart: state.cart.filter(item => item.id !== action.payload) 
-      };
-    case 'CLEAR_CART':
-      return { ...state, cart: [] };
+      return { ...state, user: null, token: null, cart: [] };
+    case 'SET_CART':
+      return { ...state, cart: action.payload };
     default:
       return state;
   }
 }
 
+
 export function ArtworkProvider({ children }) {
   const [state, dispatch] = useReducer(artworkReducer, initialState);
 
-  // Configuration Axios
+  
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common['Authorization'];
     }
   }, [state.token]);
 
+  
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !state.user) {
+      axios.get(`${API_URL}/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(response => {
+        dispatch({ type: 'SET_USER', payload: response.data });
+      })
+      .catch(err => {
+        console.error("Erreur récupération user:", err);
+        dispatch({ type: 'LOGOUT' });
+      });
+    }
+  }, []);
+
+  
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/categories`);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur chargement catégories:', error);
+      return [];
+    }
+  };
+
+  
   const fetchArtworks = async (filters = {}) => {
-  dispatch({ type: 'SET_LOADING', payload: true });
-  try {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.append(key, value);
-    });
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const params = new URLSearchParams(filters).toString();
+      const response = await axios.get(`${API_URL}/artworks?${params}`);
+      dispatch({ type: 'SET_ARTWORKS', payload: response.data || [] });
+    } catch (error) {
+      console.error('Erreur chargement artworks:', error);
+      dispatch({ type: 'SET_ARTWORKS', payload: [] });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
 
-    const response = await axios.get(`http://localhost:5555/api/artworks?${params}`);
-    
-    // CORRECTION : S'assurer que response.data est toujours défini
-    dispatch({ type: 'SET_ARTWORKS', payload: response.data || [] });
-  } catch (error) {
-    console.error('Error fetching artworks:', error);
-    // CORRECTION : En cas d'erreur, mettre un tableau vide
-    dispatch({ type: 'SET_ARTWORKS', payload: [] });
-  } finally {
-    dispatch({ type: 'SET_LOADING', payload: false });
-  }
-};
+  
+  const addArtwork = async (artworkData) => {
+    try {
+      const response = await axios.post(`${API_URL}/artworks`, artworkData);
+      await fetchArtworks();
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error("🔥 Erreur ajout œuvre :", error);
+      return { success: false, error: error.response?.data?.error || 'Erreur serveur' };
+    }
+  };
 
+  
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:5555/api/login', {
-        email,
-        password
-      });
+      const response = await axios.post(`${API_URL}/login`, { email, password });
       dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Erreur de connexion' 
-      };
+      return { success: false, error: error.response?.data?.error || 'Erreur de connexion' };
     }
   };
 
   const register = async (userData) => {
     try {
-      const response = await axios.post('http://localhost:5555/api/register', userData);
+      const response = await axios.post(`${API_URL}/register`, userData);
       dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Erreur d\'inscription' 
-      };
+      return { success: false, error: error.response?.data?.error || "Erreur d'inscription" };
     }
   };
 
@@ -116,48 +139,105 @@ export function ArtworkProvider({ children }) {
     delete axios.defaults.headers.common['Authorization'];
   };
 
-  const addArtwork = async (artworkData) => {
+  
+  const fetchCart = async () => {
     try {
-      const response = await axios.post('http://localhost:5555/api/artworks', artworkData);
-      await fetchArtworks(); // Recharger la liste
-      return { success: true, data: response.data };
+      const response = await axios.get(`${API_URL}/cart`);
+      dispatch({ type: 'SET_CART', payload: response.data });
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Erreur lors de l\'ajout' 
-      };
+      console.error('Erreur chargement panier:', error);
     }
   };
 
+  const addToCart = async (artworkId) => {
+    try {
+      const response = await axios.post(`${API_URL}/cart`, { artwork_id: artworkId });
+      await fetchCart();
+      return { success: true, data: response.data };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error || 'Erreur ajout panier' };
+    }
+  };
+
+  const removeFromCart = async (itemId) => {
+    try {
+      await axios.delete(`${API_URL}/cart/${itemId}`);
+      await fetchCart();
+    } catch (error) {
+      console.error('Erreur suppression panier:', error);
+    }
+  };
+
+  const checkoutCart = async () => {
+    try {
+      const response = await axios.post(`${API_URL}/cart/checkout`);
+      dispatch({ type: 'SET_CART', payload: [] });
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error || 'Erreur paiement' };
+    }
+  };
+
+  
   const likeArtwork = async (artworkId) => {
     try {
-      const response = await axios.post(`http://localhost:5555/api/artworks/${artworkId}/like`);
-      await fetchArtworks(); // Recharger pour mettre à jour les counts
+      const response = await axios.post(`${API_URL}/artworks/${artworkId}/like`);
       return { success: true, data: response.data };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Erreur' 
-      };
+      console.error("Erreur lors du like:", error);
+      return { success: false, error: error.response?.data?.error || 'Erreur lors du like' };
     }
   };
 
+  
+  const updateArtwork = async (artworkId, updatedData) => {
+    try {
+      const response = await axios.put(`${API_URL}/artworks/${artworkId}`, updatedData);
+      await fetchArtworks();
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Erreur modification œuvre:', error);
+      return { success: false, error: 'Erreur mise à jour' };
+    }
+  };
+
+  const deleteArtwork = async (artworkId) => {
+    try {
+      await axios.delete(`${API_URL}/artworks/${artworkId}`);
+      await fetchArtworks();
+      return { success: true };
+    } catch (error) {
+      console.error('Erreur suppression œuvre:', error);
+      return { success: false, error: 'Erreur suppression' };
+    }
+  };
+
+  
   return (
-    <ArtworkContext.Provider value={{
-      ...state,
-      dispatch,
-      fetchArtworks,
-      login,
-      register,
-      logout,
-      addArtwork,
-      likeArtwork
-    }}>
+    <ArtworkContext.Provider
+      value={{
+        ...state,
+        dispatch,
+        fetchArtworks,
+        fetchCategories,
+        login,
+        register,
+        logout,
+        addArtwork,
+        updateArtwork,
+        deleteArtwork,
+        fetchCart,
+        addToCart,
+        removeFromCart,
+        checkoutCart,
+        likeArtwork, 
+      }}
+    >
       {children}
     </ArtworkContext.Provider>
   );
 }
-
+// Hhook personnalisé
 export const useArtwork = () => {
   const context = useContext(ArtworkContext);
   if (!context) {

@@ -10,10 +10,10 @@ function Payment({ artwork, onSuccess }) {
     setError(null);
 
     try {
-      // Simulation de paiement
+      
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Marquer l'œuvre comme vendue
+      
       await axios.post('http://localhost:5555/api/confirm-payment', {
         artwork_id: artwork.id
       });

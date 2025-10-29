@@ -9,6 +9,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import './App.css';
+import CartPage from './pages/CartPage';
+import PaymentPage from "./pages/PaymentPage";
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/payment" element={<PaymentPage />} />
             </Routes>
           </main>
         </div>

@@ -2,7 +2,7 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
-# Configuration Cloudinary (remplacer avec vos vraies clés)
+
 cloudinary.config(
     cloud_name = "dvpkiqqqk",
     api_key = "123456789012345",

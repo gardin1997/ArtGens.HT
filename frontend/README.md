@@ -1,70 +1,143 @@
-# Getting Started with Create React App
+# 🎨 ArtGens.HT
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**ArtGens.HT** est une plateforme numérique dédiée à la valorisation des artistes haïtiens.  
+Elle permet aux artistes d’exposer, vendre et partager leurs œuvres tout en créant une communauté créative, moderne et inspirante.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+##  Objectif
 
-### `npm start`
+- Offrir un espace accessible et professionnel aux artistes haïtiens.  
+- Connecter les **créateurs**, **collectionneurs** et **passionnés d’art**.  
+- Intégrer l’art haïtien dans un environnement numérique moderne et fonctionnel.  
+- Encourager la découverte et la promotion des talents locaux à travers une vitrine virtuelle.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+##  Origine du projet
 
-### `npm test`
+En Haïti, beaucoup d’artistes manquent d’une véritable présence numérique.  
+Les plateformes internationales ne représentent pas toujours la richesse et la diversité de l’art haïtien.  
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**ArtGens.HT** est né de cette observation :  
+> “Créer un pont entre l’art haïtien et la technologie, pour faire rayonner nos artistes dans le monde entier.”
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+##  Fondateurs
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **Christie Roberte Martineau**  
+- **Gardin Gervais**
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+##  Technologies utilisées
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+###  Frontend
+- **React.js** (Hooks, Context API)
+- **Axios** pour la communication avec le backend
+- **Lucide Icons** pour une interface moderne et fluide
+- **CSS personnalisé / Inline styling** pour un design simple et épuré
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+###  Backend
+- **Flask** (Python)
+- **Flask-JWT-Extended** pour l’authentification sécurisée
+- **Flask-SQLAlchemy** pour la gestion de la base de données
+- **SQLite** (en mode développement)
+- **Flask-Migrate** pour la gestion des migrations
+- **CORS activé** pour la communication entre frontend et backend
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+##  Structure du projet
 
-## Learn More
+ArtGens.HT-galerie-d-art/
+│
+├── backend/
+│ ├── app.py # Point d’entrée du serveur Flask
+│ ├── auth.py # Authentification utilisateur
+│ ├── cloudinary_config.py # Configuration des images
+│ ├── migrations/ # Fichiers de migration SQLAlchemy
+│ ├── instance/ # Fichier de base de données locale
+│ └── requirements.txt # Dépendances Python
+│
+├── frontend/
+│ ├── public/
+│ │ ├── index.html
+│ │ ├── favicon.ico
+│ │ └── manifest.json
+│ │
+│ ├── src/
+│ │ ├── components/ # Navbar, Payment, etc.
+│ │ ├── context/ # ArtworkContext.js (state global)
+│ │ ├── pages/ # Pages : Home, Login, Register, Cart, etc.
+│ │ ├── App.js
+│ │ ├── index.js
+│ │ └── index.css
+│ │
+│ └── package.json # Dépendances React
+│
+└── README.md # Documentation du projet
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+yaml
+Copier le code
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+##  Installation et exécution
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+###  1. Cloner le projet
 
-### Analyzing the Bundle Size
+```bash
+git clone https://github.com/votre-utilisateur/ArtGens.HT.git
+cd ArtGens.HT-galerie-d-art
+⚙️ 2. Configuration du backend (Flask)
+bash
+Copier le code
+cd backend
+python -m venv venv
+source venv/bin/activate  # ou venv\Scripts\activate sur Windows
+pip install -r requirements.txt
+flask run --port=5555
+➡️ Le backend sera accessible sur :
+http://127.0.0.1:5555
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+💻 3. Configuration du frontend (React)
+bash
+Copier le code
+cd ../frontend
+npm install
+npm start
+➡️ Le frontend sera accessible sur :
+http://localhost:3000
 
-### Making a Progressive Web App
+🔐 Authentification & Sécurité
+Authentification basée sur JWT (JSON Web Token).
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Les routes protégées du backend nécessitent un token d’accès valide.
 
-### Advanced Configuration
+Le token est automatiquement stocké dans le localStorage après connexion.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+🛒 Fonctionnalités principales
+Fonctionnalité	Description
+👩‍🎨 Inscription / Connexion	Création de compte artiste ou acheteur
+🎨 Ajout d’œuvres	Un artiste peut publier, modifier ou supprimer ses œuvres
+❤️ Likes & Commentaires	Les utilisateurs peuvent aimer et commenter les œuvres
+🛒 Panier et paiement	Gestion du panier avec achat simulé
+💬 Espace communautaire	Interaction entre artistes et visiteurs
+💾 Stockage sécurisé	Données persistantes via SQLite + SQLAlchemy
 
-### Deployment
+📷 Aperçu visuel
+(Tu peux ajouter ici des captures d’écran de ton site, comme celles que tu as déjà faites.)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+💡 Vision
+Faire rayonner la créativité haïtienne en alliant art et technologie, et offrir aux artistes un espace professionnel, esthétique et durable pour exposer et vendre leurs œuvres.
 
-### `npm run build` fails to minify
+🧑‍💻 Auteur principal
+Gardin Gervais
+Étudiant en Gestion des Affaires à l’Université Quisqueya
+Passionné par la technologie, l’innovation et la créativité.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+📜 Licence
+Projet académique – Tous droits réservés © 2025
+Développé dans le cadre d’un projet universitaire de gestion et de développement web.

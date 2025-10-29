@@ -1,232 +1,293 @@
-import React, { useState, useEffect } from 'react';
-import { useArtwork } from '../context/ArtworkContext';
-import { Link } from 'react-router-dom';
-import SearchFilters from '../components/SearchFilters';
+import React, { useEffect, useState } from "react";
+import { useArtwork } from "../context/ArtworkContext";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 function Home() {
-  const { artworks, loading, fetchArtworks, user, likeArtwork } = useArtwork();
-  const [filters, setFilters] = useState({});
+  const { artworks, fetchArtworks, fetchCategories, loading } = useArtwork();
+  const [filters, setFilters] = useState({
+    title: "",
+    min_price: "",
+    max_price: "",
+    category: "",
+    sort: "",
+  });
+  const [categories, setCategories] = useState([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
-  // Chargement initial
   useEffect(() => {
-    fetchArtworks({});
+    fetchArtworks();
+    fetchCategories().then(setCategories);
   }, []);
 
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-  };
-
-  const handleSearch = () => {
+  const handleFilter = () => {
     fetchArtworks(filters);
+    setMenuOpen(false);
   };
 
-  const handleLike = async (artworkId) => {
-    if (!user) {
-      alert('Veuillez vous connecter pour aimer une œuvre');
-      return;
-    }
-    await likeArtwork(artworkId);
+  const handleReset = () => {
+    setFilters({
+      title: "",
+      min_price: "",
+      max_price: "",
+      category: "",
+      sort: "",
+    });
+    fetchArtworks();
   };
 
-  if (loading) {
-    return (
-      <div style={loadingStyle}>
-        <div style={spinnerStyle}>Chargement...</div>
-      </div>
-    );
-  }
-
-  // CORRECTION : Vérifier que artworks existe et est un tableau
-  const displayArtworks = artworks || [];
+  const handleOverlayClick = () => setMenuOpen(false);
 
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        <h1 style={titleStyle}>ArtGens.HT</h1>
-        <p style={subtitleStyle}>
-          Découvrez et achetez des œuvres d'art exceptionnelles d'artistes haïtiens talentueux.
-        </p>
-      </div>
+    <>
+      <Navbar onToggleMenu={() => setMenuOpen(!menuOpen)} />
+      {menuOpen && <div style={overlayStyle} onClick={handleOverlayClick}></div>}
 
-      <SearchFilters 
-        onFilterChange={handleFilterChange} 
-        onSearch={handleSearch} 
-      />
+      <div style={pageContainer}>
+        <aside
+          style={{
+            ...sidebarStyle,
+            transform: menuOpen ? "translateX(0)" : "translateX(-100%)",
+            opacity: menuOpen ? 1 : 0,
+          }}
+        >
+          <div style={sidebarHeader}>
+            <h3>🎨 Filtres</h3>
+            <button onClick={() => setMenuOpen(false)} style={closeButton}>
+              ❌
+            </button>
+          </div>
 
-      {/* CORRECTION : Utiliser displayArtworks au lieu de artworks */}
-      {displayArtworks.length === 0 ? (
-        <div style={noArtworkStyle}>
-          <h3>Aucune œuvre trouvée</h3>
-          <p>Essayez de modifier vos critères de recherche.</p>
-        </div>
-      ) : (
-        <div style={artworksGridStyle}>
-          {/* CORRECTION : Utiliser displayArtworks.map() */}
-          {displayArtworks.map(artwork => (
-            <div key={artwork.id} style={artworkCardStyle}>
-              <Link to={`/artwork/${artwork.id}`} style={linkStyle}>
-                <img 
-                  src={artwork.image_url || '/placeholder-image.jpg'} 
-                  alt={artwork.title}
-                  style={imageStyle}
-                  onError={(e) => {
-                    e.target.src = '/placeholder-image.jpg';
-                  }}
-                />
-                <div style={artworkInfoStyle}>
-                  <h3 style={artworkTitleStyle}>{artwork.title}</h3>
-                  <p style={artistStyle}>Par {artwork.artist_name}</p>
-                  <p style={priceStyle}>${artwork.price}</p>
-                  <div style={likesStyle}>
-                    <button 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleLike(artwork.id);
-                      }}
-                      style={likeButtonStyle}
-                    >
-                      ❤️ {artwork.likes_count || 0}
-                    </button>
+          <input
+            type="text"
+            placeholder="Rechercher une œuvre..."
+            value={filters.title}
+            onChange={(e) => setFilters({ ...filters, title: e.target.value })}
+            style={inputStyle}
+          />
+
+          <input
+            type="number"
+            placeholder="Prix minimum"
+            value={filters.min_price}
+            onChange={(e) =>
+              setFilters({ ...filters, min_price: e.target.value })
+            }
+            style={inputStyle}
+          />
+
+          <input
+            type="number"
+            placeholder="Prix maximum"
+            value={filters.max_price}
+            onChange={(e) =>
+              setFilters({ ...filters, max_price: e.target.value })
+            }
+            style={inputStyle}
+          />
+
+          <select
+            value={filters.category}
+            onChange={(e) =>
+              setFilters({ ...filters, category: e.target.value })
+            }
+            style={inputStyle}
+          >
+            <option value="">Toutes les catégories</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={filters.sort}
+            onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
+            style={inputStyle}
+          >
+            <option value="">Trier par défaut</option>
+            <option value="price_asc">Prix croissant</option>
+            <option value="price_desc">Prix décroissant</option>
+            <option value="recent">Plus récentes</option>
+          </select>
+
+          <button onClick={handleFilter} style={applyButtonStyle}>
+            🔍 Appliquer les filtres
+          </button>
+          <button onClick={handleReset} style={resetButtonStyle}>
+            ♻️ Réinitialiser
+          </button>
+        </aside>
+
+        {/* ✅ Galerie principale */}
+        <main style={galleryContainer}>
+          <h2 style={{ textAlign: "center", marginBottom: "1rem" }}>
+            ArtGens.HT — Découvrez les artistes haïtiens 🖼️
+          </h2>
+
+          {loading ? (
+            <p>Chargement des œuvres...</p>
+          ) : artworks.length === 0 ? (
+            <p>Aucune œuvre trouvée.</p>
+          ) : (
+            <div style={artGrid}>
+              {artworks.map((art) => (
+                <div
+                  key={art.id}
+                  style={artCard}
+                  onClick={() => navigate(`/artwork/${art.id}`)}
+                >
+                  <img src={art.image_url} alt={art.title} style={artImage} />
+                  <div style={artInfo}>
+                    <h4 style={{ marginBottom: "5px" }}>{art.title}</h4>
+                    <p style={{ color: "#555", fontSize: "0.9rem" }}>
+                      Par {art.artist_name}
+                    </p>
+                    <p style={{ fontWeight: "bold", color: "#00209f" }}>
+                      ${art.price}
+                    </p>
+
+                    {/* ✅ Compteurs visibles sous chaque œuvre */}
+                    <div style={statRow}>
+                      <span>❤️ {art.likes_count || 0}</span>
+                      <span>💬 {art.comments_count || 0}</span>
+                      <span>🔁 {art.shares_count || 0}</span>
+                      <span>⭐ {art.favorites_count || 0}</span>
+                    </div>
                   </div>
                 </div>
-              </Link>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+          )}
+        </main>
+      </div>
+    </>
   );
 }
 
-// Styles
-const containerStyle = {
-  minHeight: '100vh',
-  padding: '90px 20px 20px 20px',
-  backgroundColor: '#f8f9fa',
-  fontFamily: 'Arial, sans-serif'
+
+const pageContainer = {
+  display: "flex",
+  backgroundColor: "#f5f6fa",
+  minHeight: "100vh",
+  position: "relative",
 };
 
-const loadingStyle = {
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  height: '50vh',
-  fontSize: '18px',
-  color: '#666'
+
+const overlayStyle = {
+  position: "fixed",
+  top: "70px",
+  left: 0,
+  width: "100%",
+  height: "100%",
+  backgroundColor: "rgba(0,0,0,0.4)",
+  backdropFilter: "blur(2px)",
+  zIndex: 998,
 };
 
-const spinnerStyle = {
-  padding: '20px'
+
+const sidebarStyle = {
+  width: "280px",
+  backgroundColor: "#fff",
+  padding: "1.5rem",
+  borderRight: "1px solid #ddd",
+  boxShadow: "2px 0 8px rgba(0,0,0,0.15)",
+  position: "fixed",
+  top: "70px",
+  left: "0",
+  height: "100vh",
+  overflowY: "auto",
+  zIndex: 999,
+  transition: "all 0.4s ease",
 };
 
-const headerStyle = {
-  textAlign: 'center',
-  padding: '40px 20px',
-  backgroundColor: 'white',
-  marginBottom: '30px',
-  borderRadius: '10px',
-  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+const sidebarHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "1rem",
 };
 
-const titleStyle = {
-  fontSize: '36px',
-  color: '#00209f',
-  marginBottom: '15px',
-  fontWeight: 'bold'
+const closeButton = {
+  background: "transparent",
+  border: "none",
+  fontSize: "1.3rem",
+  cursor: "pointer",
 };
 
-const subtitleStyle = {
-  fontSize: '16px',
-  color: '#666',
-  maxWidth: '600px',
-  margin: '0 auto',
-  lineHeight: '1.5'
+const inputStyle = {
+  width: "100%",
+  padding: "10px",
+  marginBottom: "12px",
+  borderRadius: "6px",
+  border: "1px solid #ccc",
+  fontSize: "1rem",
 };
 
-const noArtworkStyle = {
-  textAlign: 'center',
-  padding: '60px 30px',
-  color: '#666',
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  margin: '30px auto',
-  maxWidth: '500px',
-  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+const applyButtonStyle = {
+  width: "100%",
+  backgroundColor: "#00209f",
+  color: "white",
+  border: "none",
+  borderRadius: "6px",
+  padding: "10px",
+  cursor: "pointer",
+  marginBottom: "10px",
 };
 
-const artworksGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-  gap: '25px',
-  padding: '0 20px 30px 20px',
-  maxWidth: '1200px',
-  margin: '0 auto'
+const resetButtonStyle = {
+  width: "100%",
+  backgroundColor: "#6c757d",
+  color: "white",
+  border: "none",
+  borderRadius: "6px",
+  padding: "10px",
+  cursor: "pointer",
 };
 
-const artworkCardStyle = {
-  backgroundColor: 'white',
-  borderRadius: '8px',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-  overflow: 'hidden',
-  transition: 'all 0.3s ease'
+const galleryContainer = {
+  flex: 1,
+  padding: "2rem",
+  marginLeft: "0",
 };
 
-const linkStyle = {
-  textDecoration: 'none',
-  color: 'inherit',
-  display: 'block',
-  height: '100%'
+const artGrid = {
+  display: "flex",
+  flexWrap: "wrap",
+  justifyContent: "center",
+  gap: "2rem",
 };
 
-const imageStyle = {
-  width: '100%',
-  height: '200px',
-  objectFit: 'cover',
-  borderBottom: '1px solid #eee'
+const artCard = {
+  backgroundColor: "#fff",
+  borderRadius: "12px",
+  overflow: "hidden",
+  boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
+  cursor: "pointer",
+  width: "320px", 
+  transition: "transform 0.3s ease, box-shadow 0.3s ease",
 };
 
-const artworkInfoStyle = {
-  padding: '20px'
+const artImage = {
+  width: "100%",
+  height: "280px", 
+  objectFit: "cover",
+  borderRadius: "12px 12px 0 0",
 };
 
-const artworkTitleStyle = {
-  fontSize: '18px',
-  margin: '0 0 10px 0',
-  color: '#333',
-  fontWeight: '600'
+const artInfo = {
+  padding: "15px",
+  textAlign: "center",
 };
 
-const artistStyle = {
-  margin: '0 0 15px 0',
-  color: '#666',
-  fontSize: '14px'
-};
-
-const priceStyle = {
-  fontSize: '20px',
-  fontWeight: 'bold',
-  color: '#00209f',
-  margin: '0 0 15px 0'
-};
-
-const likesStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  borderTop: '1px solid #eee',
-  paddingTop: '15px'
-};
-
-const likeButtonStyle = {
-  backgroundColor: 'transparent',
-  border: 'none',
-  cursor: 'pointer',
-  fontSize: '14px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '5px',
-  padding: '5px 10px',
-  borderRadius: '4px',
-  color: '#666'
+const statRow = {
+  display: "flex",
+  justifyContent: "space-around",
+  marginTop: "8px",
+  fontSize: "15px",
+  color: "#444",
 };
 
 export default Home;

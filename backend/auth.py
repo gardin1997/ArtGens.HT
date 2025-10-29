@@ -18,7 +18,7 @@ def token_required(f):
             return jsonify({'error': 'Token manquant'}), 401
         
         try:
-            token = token.split(' ')[1]  # Enlever "Bearer "
+            token = token.split(' ')[1]  
             data = jwt.decode(token, 'votre_secret_key', algorithms=['HS256'])
             current_user = User.query.get(data['user_id'])
         except:
