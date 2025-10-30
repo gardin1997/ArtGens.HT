@@ -10,16 +10,11 @@ from datetime import datetime, timedelta
 
 # --- App config ---
 app = Flask(__name__)
-
-# ✅ Autoriser les appels depuis ton site React (GitHub Pages)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
-
-# ✅ Configuration des clés et de la base
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'votre_secret_super_securise')
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'votre_jwt_secret')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
 
-# ✅ Connexion à la base de données (Render ou locale)
+# SQLite file path - Render's working dir should contain the DB file path relative to this file
 db_path = os.environ.get('DATABASE_URL', 'sqlite:///artgens.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -27,12 +22,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # --- Extensions ---
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+CORS(app)
 jwt = JWTManager(app)
 
-# ===========================
-# =======   MODELS   ========
-# ===========================
-
+# --- Models ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -104,9 +97,13 @@ class Cart(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-# ===============================
-# =======  INIT + SEED DB  ======
-# ===============================
+# --- Helpers for DB init / seeding ---
+def init_db():
+    """Utilisé localement si nécessaire pour créer tables et seed minimal."""
+    with app.app_context():
+        db.create_all()
+        seed_default_data()
+
 
 def seed_default_data():
     """Ajoute catégories et utilisateur demo si manquant."""
@@ -141,8 +138,9 @@ def seed_default_data():
             print("⚠️ Erreur lors du seed :", e)
 
 
+# --- Auto-migration (Alémbic) pour Render ---
 def auto_migrate():
-    """Applique les migrations (Render)."""
+    """Lance flask-migrate/upgrade pour appliquer les migrations (si configurées)."""
     from flask_migrate import upgrade
     with app.app_context():
         try:
@@ -152,10 +150,7 @@ def auto_migrate():
             print("⚠️ Erreur lors de la migration de la base :", e)
 
 
-# ===========================
-# =======   ROUTES   ========
-# ===========================
-
+# --- ROUTES ---
 @app.route('/')
 def home():
     return jsonify({
@@ -190,10 +185,7 @@ def render_test():
         }), 500
 
 
-# ===========================
-# =======   MAIN   ==========
-# ===========================
-
+# --- Démarrage : migrations + seed puis run ---
 env = os.environ.get('FLASK_ENV', 'production')
 
 try:
@@ -206,6 +198,7 @@ try:
 except Exception as e:
     print("⚠️ seed_default_data failed:", e)
 
+# --- Exécution compatible Render ---
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5555))
     print(f"🚀 Serveur ArtGens.HT démarré sur 0.0.0.0:{port}")
