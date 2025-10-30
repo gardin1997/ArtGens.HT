@@ -460,7 +460,7 @@ def auto_migrate():
 auto_migrate()
 
 # ✅ Ajouter des catégories par défaut si la table est vide
-from backend.models import Category
+from models import Category
 from app import db
 
 def seed_categories():
