@@ -459,6 +459,27 @@ def auto_migrate():
 # Appel automatique au démarrage
 auto_migrate()
 
+# ✅ Ajouter des catégories par défaut si la table est vide
+from models import Category  # adapte selon ton nom de fichier models.py
+from backend import db  # idem si ton app est structurée différemment
+
+def seed_categories():
+    with app.app_context():
+        if Category.query.count() == 0:
+            default_categories = [
+                Category(name="Peinture"),
+                Category(name="Sculpture"),
+                Category(name="Photographie"),
+                Category(name="Art numérique"),
+                Category(name="Portrait"),
+                Category(name="Abstrait")
+            ]
+            db.session.add_all(default_categories)
+            db.session.commit()
+            print("✅ Catégories par défaut ajoutées.")
+
+seed_categories()
+
 if __name__ == '__main__':
     init_db()
     print("🚀 Serveur ArtGens.HT démarré sur http://localhost:5555")
