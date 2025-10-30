@@ -293,7 +293,25 @@ def checkout():
 # -----------------------------
 @app.route("/api/categories", methods=["GET"])
 def get_categories():
-    return jsonify([{"id": c.id, "name": c.name} for c in Category.query.all()]), 200
+    return jsonify([{"id": c.id, "name": c.name} for c in Category.query.all()]), 
+
+@app.route('/')
+def home():
+    return jsonify({
+        "message": "✅ Serveur ArtGens.HT est en ligne sur Render",
+        "status": "success",
+        "routes_disponibles": [
+            "/api/register",
+            "/api/login",
+            "/api/me",
+            "/api/artworks",
+            "/api/categories",
+            "/api/cart",
+            "/api/cart/checkout",
+            "/api/confirm-payment"
+        ]
+    }), 200
+
 
 
 # -----------------------------
