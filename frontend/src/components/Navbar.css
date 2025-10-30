@@ -1,0 +1,169 @@
+/* ======================================================
+   🎨 Navbar.css — Thème Haïtien (bleu, rouge, blanc)
+   Compatible avec le composant Navbar.jsx
+   ====================================================== */
+
+/* Structure générale */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #00209f; /* Bleu Haïti */
+  color: white;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+}
+
+/* Conteneur interne */
+.navbar-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 70px;
+  width: 100%;
+}
+
+/* Bouton menu (mobile) */
+.menu-btn {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  height: 50px;
+  width: 50px;
+  background-color: #001873;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.menu-btn:hover {
+  background-color: #00125a;
+  transform: scale(1.05);
+}
+
+/* Logo principal */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  font-size: 1.5rem;
+  margin-left: 70px;
+  transition: opacity 0.3s ease;
+}
+
+.navbar-brand:hover {
+  opacity: 0.9;
+}
+
+.brand-icon {
+  margin-right: 8px;
+}
+
+.brand-text {
+  letter-spacing: 0.5px;
+}
+
+/* Liens de navigation */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+.nav-link:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+/* Bouton d'inscription */
+.register-btn {
+  background-color: #d21010; /* Rouge Haïti */
+  color: white;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.register-btn:hover {
+  background-color: #b00d0d;
+  transform: scale(1.05);
+}
+
+/* Bouton de déconnexion */
+.logout-btn {
+  background-color: transparent;
+  color: white;
+  border: 1px solid white;
+  border-radius: 6px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background-color: white;
+  color: #00209f;
+  transform: scale(1.05);
+}
+
+/* 📱 Responsive */
+@media (max-width: 768px) {
+  .navbar-container {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 20px;
+    height: auto;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .navbar-brand {
+    margin-left: 60px;
+    font-size: 1.3rem;
+  }
+
+  .nav-link, .register-btn, .logout-btn {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
