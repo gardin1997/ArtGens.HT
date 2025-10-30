@@ -150,108 +150,56 @@ def auto_migrate():
             print("⚠️ Erreur lors de la migration de la base :", e)
 
 
-# --- Routes (extraits) ---
-@app.route('/api/register', methods=['POST'])
-def register():
+# --- ROUTES ---
+@app.route('/')
+def home():
+    return jsonify({
+        "message": "✅ Serveur ArtGens.HT en ligne sur Render",
+        "status": "success"
+    }), 200
+
+
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    categories = Category.query.all()
+    return jsonify([{'id': c.id, 'name': c.name} for c in categories]), 200
+
+
+@app.route('/api/render-test', methods=['GET'])
+def render_test():
+    """Route spéciale pour tester Render"""
     try:
-        data = request.get_json()
-        if not data or 'email' not in data or 'password' not in data:
-            return jsonify({'error': 'Champs requis manquants'}), 400
-
-        if User.query.filter_by(email=data['email']).first():
-            return jsonify({'error': 'Email déjà utilisé'}), 400
-
-        user = User(
-            username=data.get('username', data['email'].split('@')[0]),
-            email=data['email'],
-            is_artist=data.get('is_artist', False),
-            bio=data.get('bio', '')
-        )
-        user.set_password(data['password'])
-        db.session.add(user)
-        db.session.commit()
-
-        access_token = create_access_token(identity=user.id)
+        user_count = User.query.count()
+        category_count = Category.query.count()
         return jsonify({
-            'token': access_token,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'is_artist': user.is_artist,
-                'bio': user.bio
-            }
-        }), 201
+            "status": "✅ OK",
+            "message": "Déploiement Render opérationnel",
+            "users_in_db": user_count,
+            "categories_in_db": category_count
+        }), 200
     except Exception as e:
-        print("🔥 Erreur dans /api/register :", e)
-        return jsonify({'error': str(e)}), 400
-
-
-@app.route('/api/login', methods=['POST'])
-def login():
-    try:
-        data = request.get_json()
-        if not data or 'email' not in data or 'password' not in data:
-            return jsonify({'error': 'Champs requis manquants'}), 400
-
-        user = User.query.filter_by(email=data['email']).first()
-
-        if user and user.check_password(data['password']):
-            access_token = create_access_token(identity=user.id)
-            return jsonify({
-                'token': access_token,
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'is_artist': user.is_artist,
-                    'bio': user.bio
-                }
-            }), 200
-
-        return jsonify({'error': 'Email ou mot de passe incorrect'}), 401
-
-    except Exception as e:
-        print("🔥 Erreur dans /api/login :", e)
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/artworks', methods=['GET'])
-def get_artworks():
-    artworks = Artwork.query.all()
-    result = [{
-        'id': art.id,
-        'title': art.title,
-        'description': art.description,
-        'price': art.price,
-        'image_url': art.image_url,
-        'artist_name': art.artist.username if art.artist else None,
-        'artist_id': art.artist.id if art.artist else None,
-        'likes_count': len(art.likes),
-        'created_at': art.created_at.isoformat()
-    } for art in artworks]
-    return jsonify(result), 200
-
-# (les autres routes restent inchangées — tu peux réutiliser le reste de ton code tel quel)
+        return jsonify({
+            "status": "❌ ERROR",
+            "message": "Le serveur est actif mais la base pose problème",
+            "error": str(e)
+        }), 500
 
 
 # --- Démarrage : migrations + seed puis run ---
+env = os.environ.get('FLASK_ENV', 'production')
+
+try:
+    auto_migrate()
+except Exception as e:
+    print("⚠️ auto_migrate failed:", e)
+
+try:
+    seed_default_data()
+except Exception as e:
+    print("⚠️ seed_default_data failed:", e)
+
+# --- Exécution compatible Render ---
 if __name__ == '__main__':
-    # Si on est en production (Render), on laisse Alembic gérer les migrations via auto_migrate
-    env = os.environ.get('FLASK_ENV', 'production')
-    try:
-        # Appliquer migrations (ne fera rien s'il n'y a pas de migrations)
-        auto_migrate()
-    except Exception as e:
-        print("⚠️ auto_migrate failed:", e)
-
-    # Seed initial data si nécessaire
-    try:
-        seed_default_data()
-    except Exception as e:
-        print("⚠️ seed_default_data failed:", e)
-
-    # Port compatible Render (Render fournit la variable PORT)
     port = int(os.environ.get('PORT', 5555))
     print(f"🚀 Serveur ArtGens.HT démarré sur 0.0.0.0:{port}")
     app.run(debug=(env != 'production'), host='0.0.0.0', port=port)
