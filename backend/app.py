@@ -304,3 +304,19 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5555))
     print(f"🚀 Serveur ArtGens.HT lancé sur http://0.0.0.0:{port}")
     app.run(debug=True, host="0.0.0.0", port=port)
+
+@app.route('/')
+def home():
+    return jsonify({
+        "message": "✅ Serveur ArtGens.HT est en ligne sur Render",
+        "status": "success",
+        "routes_disponibles": [
+            "/api/login",
+            "/api/register",
+            "/api/artworks",
+            "/api/categories",
+            "/api/cart",
+            "/api/cart/checkout"
+        ]
+    }), 200
+
