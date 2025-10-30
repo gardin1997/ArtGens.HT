@@ -1,22 +1,18 @@
 import React, { useState } from 'react';
+import './SearchFilters.css'; // 💅 Styles séparés pour hover et responsive
 
 function SearchFilters({ onFilterChange, onSearch }) {
   const [filters, setFilters] = useState({
     search: '',
     category: '',
     minPrice: '',
-    maxPrice: ''
+    maxPrice: '',
   });
 
   const handleChange = (name, value) => {
-    const newFilters = {
-      ...filters,
-      [name]: value
-    };
+    const newFilters = { ...filters, [name]: value };
     setFilters(newFilters);
-    if (onFilterChange) {
-      onFilterChange(newFilters);
-    }
+    onFilterChange?.(newFilters);
   };
 
   const handleReset = () => {
@@ -24,64 +20,55 @@ function SearchFilters({ onFilterChange, onSearch }) {
       search: '',
       category: '',
       minPrice: '',
-      maxPrice: ''
+      maxPrice: '',
     };
     setFilters(resetFilters);
-    if (onFilterChange) {
-      onFilterChange(resetFilters);
-    }
-    if (onSearch) {
-      onSearch();
-    }
+    onFilterChange?.(resetFilters);
+    onSearch?.();
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onSearch) {
-      onSearch();
-    }
+    onSearch?.();
   };
 
   return (
-    <div style={filtersContainerStyle}>
-      <h3 style={titleStyle}>Filtrer les œuvres</h3>
-      
-      <form onSubmit={handleSubmit}>
-        <div style={filterGroupStyle}>
+    <div className="filters-container">
+      <h3 className="filters-title">🎨 Filtrer les œuvres</h3>
+
+      <form onSubmit={handleSubmit} className="filters-form">
+        <div className="filter-group">
           <input
             type="text"
             placeholder="Rechercher par titre..."
             value={filters.search}
             onChange={(e) => handleChange('search', e.target.value)}
-            style={inputStyle}
+            className="filter-input"
           />
         </div>
 
-        <div style={filterGroupStyle}>
+        <div className="filter-group two-cols">
           <input
             type="number"
             placeholder="Prix minimum"
             value={filters.minPrice}
             onChange={(e) => handleChange('minPrice', e.target.value)}
-            style={inputStyle}
+            className="filter-input"
           />
-        </div>
-
-        <div style={filterGroupStyle}>
           <input
             type="number"
             placeholder="Prix maximum"
             value={filters.maxPrice}
             onChange={(e) => handleChange('maxPrice', e.target.value)}
-            style={inputStyle}
+            className="filter-input"
           />
         </div>
 
-        <div style={filterGroupStyle}>
+        <div className="filter-group">
           <select
             value={filters.category}
             onChange={(e) => handleChange('category', e.target.value)}
-            style={inputStyle}
+            className="filter-input"
           >
             <option value="">Toutes les catégories</option>
             <option value="Peinture">Peinture</option>
@@ -93,74 +80,18 @@ function SearchFilters({ onFilterChange, onSearch }) {
           </select>
         </div>
 
-        <div style={buttonsContainerStyle}>
-          <button type="submit" style={searchButtonStyle}>
+        <div className="filter-buttons">
+          <button type="submit" className="btn-primary">
             🔍 Appliquer les filtres
           </button>
-          
-          <button type="button" onClick={handleReset} style={resetButtonStyle}>
-            Enlever les filtres
+
+          <button type="button" onClick={handleReset} className="btn-secondary">
+            Réinitialiser
           </button>
         </div>
       </form>
     </div>
   );
 }
-
-// TOUS LES STYLES DÉFINIS CI-DESSOUS
-const filtersContainerStyle = {
-  backgroundColor: 'white',
-  padding: '25px',
-  borderRadius: '8px',
-  marginBottom: '30px',
-  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-};
-
-const titleStyle = {
-  marginBottom: '20px',
-  color: '#333',
-  fontSize: '20px'
-};
-
-const filterGroupStyle = {
-  marginBottom: '15px'
-};
-
-const inputStyle = {
-  width: '100%',
-  padding: '12px',
-  border: '1px solid #ddd',
-  borderRadius: '4px',
-  fontSize: '14px',
-  boxSizing: 'border-box'
-};
-
-const buttonsContainerStyle = {
-  display: 'flex',
-  gap: '15px',
-  marginTop: '20px'
-};
-
-const searchButtonStyle = {
-  backgroundColor: '#00209f',
-  color: 'white',
-  border: 'none',
-  padding: '12px 20px',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontSize: '14px',
-  flex: 2
-};
-
-const resetButtonStyle = {
-  backgroundColor: '#6c757d',
-  color: 'white',
-  border: 'none',
-  padding: '12px 20px',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  fontSize: '14px',
-  flex: 1
-};
 
 export default SearchFilters;
