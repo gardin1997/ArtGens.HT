@@ -203,3 +203,9 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5555))
     print(f"🚀 Serveur ArtGens.HT démarré sur 0.0.0.0:{port}")
     app.run(debug=(env != 'production'), host='0.0.0.0', port=port)
+
+# ✅ Autoriser les appels API depuis ton site React (GitHub Pages)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+app.config['SECRET_KEY'] = 'votre_secret_super_securise'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///artgens.db'
