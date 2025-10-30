@@ -445,6 +445,15 @@ def get_current_user():
         'bio': user.bio
     }), 200
 
+# ✅ Créer automatiquement les tables à chaque démarrage (utile sur Render)
+@app.before_first_request
+def initialize_database():
+    from flask_migrate import upgrade
+    try:
+        upgrade()
+        print("✅ Base de données mise à jour avec succès.")
+    except Exception as e:
+        print("⚠️ Erreur lors de la mise à jour de la base :", e)
 
 if __name__ == '__main__':
     init_db()
