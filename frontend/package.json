@@ -1,8 +1,8 @@
 {
-  "homepage": "https://gardin1997.github.io/ArtGens.HT",
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "artgens-frontend",
+  "version": "1.0.0",
   "private": true,
+  "description": "Interface frontend de ArtGens.HT — Application React connectée à Flask (Render)",
   "dependencies": {
     "@stripe/react-stripe-js": "^5.2.0",
     "@stripe/stripe-js": "^8.1.0",
@@ -23,9 +23,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": ["react-app", "react-app/jest"]
@@ -38,7 +36,5 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {
-    "gh-pages": "^6.3.0"
-  }
+  "devDependencies": {}
 }
