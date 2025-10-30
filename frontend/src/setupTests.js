@@ -1,5 +1,14 @@
-// jest-dom adds custom jest matchers for asserting on DOM nodes.
-// allows you to do things like:
-// expect(element).toHaveTextContent(/react/i)
-// learn more: https://github.com/testing-library/jest-dom
+/**
+ * ✅ setupTests.js
+ *
+ * Ce fichier configure l’environnement de test Jest
+ * avant chaque exécution (avec create-react-app).
+ * 
+ * Il permet d’utiliser des assertions avancées comme :
+ *   expect(element).toHaveTextContent(/mot/i)
+ *   expect(linkElement).toBeInTheDocument()
+ *
+ * Ces fonctions viennent de la librairie "@testing-library/jest-dom".
+ */
+
 import '@testing-library/jest-dom';
