@@ -159,9 +159,13 @@ def register():
     db.session.commit()
 
     access_token = create_access_token(identity=user.id)
-    return jsonify({"token": access_token, "user": {
-        "id": user.id, "username": user.username, "email": user.email, "is_artist": user.is_artist, "bio": user.bio
-    }}), 201
+    return jsonify({
+        "token": access_token,
+        "user": {
+            "id": user.id, "username": user.username, "email": user.email,
+            "is_artist": user.is_artist, "bio": user.bio
+        }
+    }), 201
 
 
 @app.route("/api/login", methods=["POST"])
@@ -293,8 +297,17 @@ def checkout():
 # -----------------------------
 @app.route("/api/categories", methods=["GET"])
 def get_categories():
-    return jsonify([{"id": c.id, "name": c.name} for c in Category.query.all()]), 
+    try:
+        categories = Category.query.all()
+        return jsonify([{"id": c.id, "name": c.name} for c in categories]), 200
+    except Exception as e:
+        print("❌ Erreur dans /api/categories :", e)
+        return jsonify({"error": str(e)}), 500
 
+
+# -----------------------------
+# 🏠 ACCUEIL (Render)
+# -----------------------------
 @app.route('/')
 def home():
     return jsonify({
@@ -307,11 +320,9 @@ def home():
             "/api/artworks",
             "/api/categories",
             "/api/cart",
-            "/api/cart/checkout",
-            "/api/confirm-payment"
+            "/api/cart/checkout"
         ]
     }), 200
-
 
 
 # -----------------------------
@@ -322,19 +333,3 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5555))
     print(f"🚀 Serveur ArtGens.HT lancé sur http://0.0.0.0:{port}")
     app.run(debug=True, host="0.0.0.0", port=port)
-
-@app.route('/')
-def home():
-    return jsonify({
-        "message": "✅ Serveur ArtGens.HT est en ligne sur Render",
-        "status": "success",
-        "routes_disponibles": [
-            "/api/login",
-            "/api/register",
-            "/api/artworks",
-            "/api/categories",
-            "/api/cart",
-            "/api/cart/checkout"
-        ]
-    }), 200
-
