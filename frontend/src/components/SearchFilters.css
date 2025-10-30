@@ -1,0 +1,110 @@
+/* 🎨 Conteneur principal */
+.filters-container {
+  background-color: white;
+  padding: 25px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.filters-container:hover {
+  transform: scale(1.01);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* 🏷️ Titre */
+.filters-title {
+  margin-bottom: 20px;
+  color: #00209f;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* 🧱 Groupes d’entrée */
+.filter-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group.two-cols {
+  flex-direction: row;
+  gap: 10px;
+}
+
+/* 🧩 Inputs et select */
+.filter-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.filter-input:focus {
+  border-color: #00209f;
+  outline: none;
+  box-shadow: 0 0 6px rgba(0, 32, 159, 0.3);
+}
+
+/* 🔘 Boutons */
+.filter-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  flex: 2;
+  background-color: #00209f;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #00145e;
+  transform: scale(1.03);
+}
+
+.btn-secondary {
+  flex: 1;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #555d63;
+  transform: scale(1.03);
+}
+
+/* 📱 Responsive (mobile) */
+@media (max-width: 768px) {
+  .filter-group.two-cols {
+    flex-direction: column;
+  }
+
+  .filter-buttons {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+}
