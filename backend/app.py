@@ -3,12 +3,14 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import (
+    JWTManager, create_access_token, jwt_required, get_jwt_identity
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 
 # ============================================================
-# ⚙️ CONFIGURATION DE L’APPLICATION FLASK
+# ⚙️ CONFIGURATION DE L’APPLICATION
 # ============================================================
 
 app = Flask(__name__)
@@ -25,8 +27,9 @@ migrate = Migrate(app, db)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 jwt = JWTManager(app)
 
+
 # ============================================================
-# 👥 MODÈLES DE DONNÉES
+# 👥 MODÈLES
 # ============================================================
 
 class User(db.Model):
@@ -112,7 +115,6 @@ def init_db():
 
 
 def seed_categories():
-    """Ajoute des catégories par défaut si la table est vide."""
     if Category.query.count() == 0:
         default_categories = [
             Category(name="Peinture"),
@@ -128,7 +130,6 @@ def seed_categories():
 
 
 def seed_demo_user():
-    """Crée un utilisateur démo artiste."""
     if User.query.count() == 0:
         user = User(
             username="artistedemo",
@@ -166,10 +167,13 @@ def register():
     db.session.commit()
 
     token = create_access_token(identity=user.id)
-    return jsonify({"token": token, "user": {
-        "id": user.id, "username": user.username, "email": user.email,
-        "is_artist": user.is_artist, "bio": user.bio
-    }}), 201
+    return jsonify({
+        "token": token,
+        "user": {
+            "id": user.id, "username": user.username,
+            "email": user.email, "is_artist": user.is_artist, "bio": user.bio
+        }
+    }), 201
 
 
 @app.route("/api/login", methods=["POST"])
@@ -250,45 +254,65 @@ def create_artwork():
     return jsonify({"message": "✅ Œuvre publiée avec succès"}), 201
 
 
-@app.route("/api/artworks/<int:artwork_id>", methods=["PUT"])
+# ============================================================
+# ❤️ LIKE & 💬 COMMENTAIRES
+# ============================================================
+
+@app.route("/api/artworks/<int:artwork_id>/like", methods=["POST"])
 @jwt_required()
-def update_artwork(artwork_id):
+def toggle_like(artwork_id):
     user_id = get_jwt_identity()
     artwork = Artwork.query.get_or_404(artwork_id)
+    existing_like = Like.query.filter_by(user_id=user_id, artwork_id=artwork_id).first()
 
-    if artwork.artist_id != user_id:
-        return jsonify({"error": "Accès refusé"}), 403
+    if existing_like:
+        db.session.delete(existing_like)
+        db.session.commit()
+        return jsonify({"liked": False, "message": "Like retiré"}), 200
 
+    new_like = Like(user_id=user_id, artwork_id=artwork_id)
+    db.session.add(new_like)
+    db.session.commit()
+    return jsonify({"liked": True, "message": "Like ajouté"}), 201
+
+
+@app.route("/api/artworks/<int:artwork_id>/comments", methods=["GET"])
+def get_comments(artwork_id):
+    artwork = Artwork.query.get_or_404(artwork_id)
+    comments = [{
+        "id": c.id,
+        "content": c.content,
+        "author": c.user.username,
+        "created_at": c.created_at.strftime("%Y-%m-%d %H:%M")
+    } for c in artwork.comments]
+    return jsonify(comments), 200
+
+
+@app.route("/api/artworks/<int:artwork_id>/comments", methods=["POST"])
+@jwt_required()
+def add_comment(artwork_id):
+    user_id = get_jwt_identity()
     data = request.get_json()
-    artwork.title = data.get("title", artwork.title)
-    artwork.description = data.get("description", artwork.description)
-    artwork.price = float(data.get("price", artwork.price))
-    artwork.image_url = data.get("image_url", artwork.image_url)
-    db.session.commit()
+    content = data.get("content", "").strip()
 
-    return jsonify({"message": "✅ Œuvre mise à jour"}), 200
+    if not content:
+        return jsonify({"error": "Commentaire vide"}), 400
 
-
-@app.route("/api/artworks/<int:artwork_id>", methods=["DELETE"])
-@jwt_required()
-def delete_artwork(artwork_id):
-    user_id = get_jwt_identity()
     artwork = Artwork.query.get_or_404(artwork_id)
-
-    if artwork.artist_id != user_id:
-        return jsonify({"error": "Accès refusé"}), 403
-
-    Like.query.filter_by(artwork_id=artwork_id).delete()
-    Comment.query.filter_by(artwork_id=artwork_id).delete()
-    Cart.query.filter_by(artwork_id=artwork_id).delete()
-
-    db.session.delete(artwork)
+    comment = Comment(content=content, user_id=user_id, artwork_id=artwork.id)
+    db.session.add(comment)
     db.session.commit()
-    return jsonify({"message": "🗑️ Œuvre supprimée avec succès"}), 200
+
+    return jsonify({
+        "id": comment.id,
+        "content": comment.content,
+        "author": comment.user.username,
+        "created_at": comment.created_at.strftime("%Y-%m-%d %H:%M")
+    }), 201
 
 
 # ============================================================
-# 🛒 PANIER / CHECKOUT
+# 🛒 PANIER & CHECKOUT
 # ============================================================
 
 @app.route("/api/cart", methods=["GET"])
@@ -297,8 +321,7 @@ def get_cart():
     user_id = get_jwt_identity()
     items = Cart.query.filter_by(user_id=user_id).all()
     return jsonify([{
-        "id": c.id, "title": c.artwork.title,
-        "price": c.artwork.price, "image_url": c.artwork.image_url
+        "id": c.id, "title": c.artwork.title, "price": c.artwork.price, "image_url": c.artwork.image_url
     } for c in items]), 200
 
 
@@ -352,18 +375,24 @@ def get_categories():
 
 
 # ============================================================
-# 🌐 PAGE D’ACCUEIL (Render Test)
+# 🌐 PAGE D’ACCUEIL (TEST)
 # ============================================================
 
 @app.route('/')
 def home():
     return jsonify({
-        "message": "✅ Serveur ArtGens.HT en ligne sur Render",
+        "message": "✅ Serveur ArtGens.HT est en ligne sur Render",
         "status": "success",
-        "routes": [
-            "/api/register", "/api/login", "/api/me",
-            "/api/artworks", "/api/categories",
-            "/api/cart", "/api/cart/checkout"
+        "routes_disponibles": [
+            "/api/register",
+            "/api/login",
+            "/api/me",
+            "/api/artworks",
+            "/api/artworks/<id>/like",
+            "/api/artworks/<id>/comments",
+            "/api/cart",
+            "/api/cart/checkout",
+            "/api/categories"
         ]
     }), 200
 
