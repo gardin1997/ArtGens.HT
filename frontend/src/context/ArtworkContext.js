@@ -2,11 +2,8 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import axios from 'axios';
 
 // 🌍 Configuration dynamique de l'API
-// En local → http://localhost:5555/api
-// En production (Vercel) → utilise la variable d'environnement REACT_APP_API_URL
-const API_URL = process.env.REACT_APP_API_URL
-  ? `${process.env.REACT_APP_API_URL}/api`
-  : 'http://127.0.0.1:5555/api';
+const API_URL =
+  process.env.REACT_APP_API_URL || 'https://artgens-ht-2.onrender.com/api';
 
 const ArtworkContext = createContext();
 
@@ -155,7 +152,9 @@ export function ArtworkProvider({ children }) {
   // 🛒 Panier
   const fetchCart = async () => {
     try {
-      const response = await axios.get(`${API_URL}/cart`);
+      const response = await axios.get(`${API_URL}/cart`, {
+        headers: { Authorization: `Bearer ${state.token}` }
+      });
       dispatch({ type: 'SET_CART', payload: response.data });
     } catch (error) {
       console.error('Erreur chargement panier:', error);
@@ -164,12 +163,15 @@ export function ArtworkProvider({ children }) {
 
   const addToCart = async artworkId => {
     try {
-      const response = await axios.post(`${API_URL}/cart`, {
-        artwork_id: artworkId
-      });
+      const response = await axios.post(
+        `${API_URL}/cart`,
+        { artwork_id: artworkId },
+        { headers: { Authorization: `Bearer ${state.token}` } }
+      );
       await fetchCart();
       return { success: true, data: response.data };
     } catch (error) {
+      console.error('Erreur ajout panier:', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Erreur ajout panier'
@@ -179,7 +181,9 @@ export function ArtworkProvider({ children }) {
 
   const removeFromCart = async itemId => {
     try {
-      await axios.delete(`${API_URL}/cart/${itemId}`);
+      await axios.delete(`${API_URL}/cart/${itemId}`, {
+        headers: { Authorization: `Bearer ${state.token}` }
+      });
       await fetchCart();
     } catch (error) {
       console.error('Erreur suppression panier:', error);
@@ -188,10 +192,15 @@ export function ArtworkProvider({ children }) {
 
   const checkoutCart = async () => {
     try {
-      const response = await axios.post(`${API_URL}/cart/checkout`);
+      const response = await axios.post(
+        `${API_URL}/cart/checkout`,
+        {},
+        { headers: { Authorization: `Bearer ${state.token}` } }
+      );
       dispatch({ type: 'SET_CART', payload: [] });
       return { success: true, message: response.data.message };
     } catch (error) {
+      console.error('Erreur checkout:', error);
       return {
         success: false,
         error: error.response?.data?.error || 'Erreur paiement'
@@ -202,7 +211,11 @@ export function ArtworkProvider({ children }) {
   // ❤️ Like œuvre
   const likeArtwork = async artworkId => {
     try {
-      const response = await axios.post(`${API_URL}/artworks/${artworkId}/like`);
+      const response = await axios.post(
+        `${API_URL}/artworks/${artworkId}/like`,
+        {},
+        { headers: { Authorization: `Bearer ${state.token}` } }
+      );
       return { success: true, data: response.data };
     } catch (error) {
       console.error('Erreur lors du like:', error);
@@ -213,10 +226,42 @@ export function ArtworkProvider({ children }) {
     }
   };
 
+  // 💬 Commentaires
+  const fetchComments = async artworkId => {
+    try {
+      const response = await axios.get(`${API_URL}/artworks/${artworkId}/comments`);
+      return response.data;
+    } catch (error) {
+      console.error('Erreur chargement commentaires:', error);
+      return [];
+    }
+  };
+
+  const addComment = async (artworkId, content) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/artworks/${artworkId}/comments`,
+        { content },
+        { headers: { Authorization: `Bearer ${state.token}` } }
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Erreur ajout commentaire:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Erreur ajout commentaire'
+      };
+    }
+  };
+
   // ✏️ Mise à jour œuvre
   const updateArtwork = async (artworkId, updatedData) => {
     try {
-      const response = await axios.put(`${API_URL}/artworks/${artworkId}`, updatedData);
+      const response = await axios.put(
+        `${API_URL}/artworks/${artworkId}`,
+        updatedData,
+        { headers: { Authorization: `Bearer ${state.token}` } }
+      );
       await fetchArtworks();
       return { success: true, data: response.data };
     } catch (error) {
@@ -228,7 +273,9 @@ export function ArtworkProvider({ children }) {
   // 🗑️ Suppression œuvre
   const deleteArtwork = async artworkId => {
     try {
-      await axios.delete(`${API_URL}/artworks/${artworkId}`);
+      await axios.delete(`${API_URL}/artworks/${artworkId}`, {
+        headers: { Authorization: `Bearer ${state.token}` }
+      });
       await fetchArtworks();
       return { success: true };
     } catch (error) {
@@ -254,7 +301,9 @@ export function ArtworkProvider({ children }) {
         addToCart,
         removeFromCart,
         checkoutCart,
-        likeArtwork
+        likeArtwork,
+        fetchComments,
+        addComment
       }}
     >
       {children}
