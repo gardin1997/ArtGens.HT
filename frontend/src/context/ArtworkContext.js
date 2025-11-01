@@ -1,11 +1,12 @@
-import React, { createContext, useContext, useReducer, useEffect } from "react";
-import axios from "axios";
-import { useArtwork, API_URL } from "../context/ArtworkContext";
+// src/context/ArtworkContext.jsx
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import axios from 'axios';
 
+// Création du contexte global
 const ArtworkContext = createContext();
 
-// 🌍 URL dynamique : utilise Render en ligne, sinon localhost
-const API_URL =
+// 🌍 URL dynamique (local ↔ Render)
+export const API_URL =
   process.env.REACT_APP_API_URL
     ? `${process.env.REACT_APP_API_URL}/api`
     : window.location.hostname.includes("localhost")
@@ -14,201 +15,120 @@ const API_URL =
 
 console.log("🔗 API_URL utilisée :", API_URL);
 
+// État initial
 const initialState = {
   artworks: [],
   user: null,
   cart: [],
   loading: false,
-  token: localStorage.getItem("token"),
+  token: localStorage.getItem('token')
 };
 
-// 🎯 Reducer global
+// Reducer principal
 function artworkReducer(state, action) {
   switch (action.type) {
-    case "SET_LOADING":
+    case 'SET_LOADING':
       return { ...state, loading: action.payload };
-    case "SET_ARTWORKS":
+    case 'SET_ARTWORKS':
       return { ...state, artworks: action.payload };
-    case "SET_USER":
+    case 'SET_USER':
       return { ...state, user: action.payload };
-    case "LOGIN_SUCCESS":
-      localStorage.setItem("token", action.payload.token);
+    case 'LOGIN_SUCCESS':
+      localStorage.setItem('token', action.payload.token);
       return {
         ...state,
         user: action.payload.user,
-        token: action.payload.token,
+        token: action.payload.token
       };
-    case "LOGOUT":
-      localStorage.removeItem("token");
+    case 'LOGOUT':
+      localStorage.removeItem('token');
       return { ...state, user: null, token: null, cart: [] };
-    case "SET_CART":
-      return { ...state, cart: action.payload };
+    case 'ADD_TO_CART':
+      return { ...state, cart: [...state.cart, action.payload] };
+    case 'REMOVE_FROM_CART':
+      return { ...state, cart: state.cart.filter(item => item.id !== action.payload) };
+    case 'CLEAR_CART':
+      return { ...state, cart: [] };
     default:
       return state;
   }
 }
 
+// Provider
 export function ArtworkProvider({ children }) {
   const [state, dispatch] = useReducer(artworkReducer, initialState);
 
-  // ⚙️ Configuration du token
+  // Configuration Axios avec le token
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common["Authorization"];
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
   }, [state.token]);
 
-  // 🔁 Charger les œuvres
-  const fetchArtworks = async () => {
-    dispatch({ type: "SET_LOADING", payload: true });
+  // 🔹 Charger les œuvres
+  const fetchArtworks = async (filters = {}) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const response = await axios.get(`${API_URL}/artworks`);
-      dispatch({ type: "SET_ARTWORKS", payload: response.data || [] });
+      const response = await axios.get(`${API_URL}/artworks`, { params: filters });
+      dispatch({ type: 'SET_ARTWORKS', payload: response.data || [] });
     } catch (error) {
-      console.error("Erreur chargement œuvres:", error);
-      dispatch({ type: "SET_ARTWORKS", payload: [] });
+      console.error('Erreur de chargement des œuvres :', error);
+      dispatch({ type: 'SET_ARTWORKS', payload: [] });
     } finally {
-      dispatch({ type: "SET_LOADING", payload: false });
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
-  // 🔐 Connexion
+  // 🔹 Connexion
   const login = async (email, password) => {
     try {
       const response = await axios.post(`${API_URL}/login`, { email, password });
-      dispatch({ type: "LOGIN_SUCCESS", payload: response.data });
-      axios.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${response.data.token}`;
+      dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
+      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
       return { success: true };
     } catch (error) {
-      console.error("Erreur connexion:", error);
-      return {
-        success: false,
-        error: error.response?.data?.error || "Erreur de connexion",
-      };
+      return { success: false, error: error.response?.data?.error || 'Erreur de connexion' };
     }
   };
 
-  // 📝 Inscription
+  // 🔹 Inscription
   const register = async (userData) => {
     try {
       const response = await axios.post(`${API_URL}/register`, userData);
-      dispatch({ type: "LOGIN_SUCCESS", payload: response.data });
-      axios.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${response.data.token}`;
+      dispatch({ type: 'LOGIN_SUCCESS', payload: response.data });
+      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
       return { success: true };
     } catch (error) {
-      console.error("Erreur inscription:", error);
-      return {
-        success: false,
-        error: error.response?.data?.error || "Erreur d'inscription",
-      };
+      return { success: false, error: error.response?.data?.error || "Erreur d'inscription" };
     }
   };
 
-  // 🚪 Déconnexion
+  // 🔹 Déconnexion
   const logout = () => {
-    dispatch({ type: "LOGOUT" });
-    delete axios.defaults.headers.common["Authorization"];
+    dispatch({ type: 'LOGOUT' });
+    delete axios.defaults.headers.common['Authorization'];
   };
 
-  // ➕ Ajouter une œuvre
+  // 🔹 Ajouter une œuvre
   const addArtwork = async (artworkData) => {
     try {
       const response = await axios.post(`${API_URL}/artworks`, artworkData);
       await fetchArtworks();
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("Erreur ajout œuvre:", error);
-      return {
-        success: false,
-        error: error.response?.data?.error || "Erreur lors de l'ajout",
-      };
+      return { success: false, error: error.response?.data?.error || "Erreur d'ajout" };
     }
   };
 
-  // ❤️ Like
+  // 🔹 Like
   const likeArtwork = async (artworkId) => {
     try {
       const response = await axios.post(`${API_URL}/artworks/${artworkId}/like`);
       await fetchArtworks();
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("Erreur like:", error);
-      return {
-        success: false,
-        error: error.response?.data?.error || "Erreur lors du like",
-      };
-    }
-  };
-
-  // 💬 Commentaire
-  const addComment = async (artworkId, content) => {
-    try {
-      const response = await axios.post(
-        `${API_URL}/artworks/${artworkId}/comments`,
-        { content }
-      );
-      return { success: true, data: response.data };
-    } catch (error) {
-      console.error("Erreur ajout commentaire:", error);
-      return {
-        success: false,
-        error:
-          error.response?.data?.error || "Erreur lors de l'ajout du commentaire",
-      };
-    }
-  };
-
-  // 🛒 Panier
-  const fetchCart = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/cart`);
-      dispatch({ type: "SET_CART", payload: response.data });
-    } catch (error) {
-      console.error("Erreur panier:", error);
-    }
-  };
-
-  const addToCart = async (artworkId) => {
-    try {
-      const response = await axios.post(`${API_URL}/cart`, {
-        artwork_id: artworkId,
-      });
-      await fetchCart();
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || "Erreur ajout panier",
-      };
-    }
-  };
-
-  const removeFromCart = async (itemId) => {
-    try {
-      await axios.delete(`${API_URL}/cart/${itemId}`);
-      await fetchCart();
-    } catch (error) {
-      console.error("Erreur suppression panier:", error);
-    }
-  };
-
-  const checkoutCart = async () => {
-    try {
-      const response = await axios.post(`${API_URL}/cart/checkout`);
-      dispatch({ type: "SET_CART", payload: [] });
-      return { success: true, message: response.data.message };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || "Erreur paiement",
-      };
+      return { success: false, error: error.response?.data?.error || 'Erreur like' };
     }
   };
 
@@ -222,12 +142,7 @@ export function ArtworkProvider({ children }) {
         register,
         logout,
         addArtwork,
-        likeArtwork,
-        addComment,
-        fetchCart,
-        addToCart,
-        removeFromCart,
-        checkoutCart,
+        likeArtwork
       }}
     >
       {children}
@@ -237,8 +152,6 @@ export function ArtworkProvider({ children }) {
 
 export const useArtwork = () => {
   const context = useContext(ArtworkContext);
-  if (!context) {
-    throw new Error("useArtwork must be used within an ArtworkProvider");
-  }
+  if (!context) throw new Error('useArtwork must be used within an ArtworkProvider');
   return context;
 };
