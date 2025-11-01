@@ -7,25 +7,28 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 
-# -----------------------------
-# ⚙️ CONFIGURATION DE L’APP
-# -----------------------------
+# ============================================================
+# ⚙️ CONFIGURATION DE L’APPLICATION FLASK
+# ============================================================
+
 app = Flask(__name__)
+
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'votre_secret_super_securise')
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'votre_jwt_secret')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=7)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///artgens.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Extensions
+# Initialisation des extensions
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 jwt = JWTManager(app)
 
-# -----------------------------
-# 👥 MODÈLES
-# -----------------------------
+# ============================================================
+# 👥 MODÈLES DE DONNÉES
+# ============================================================
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -97,9 +100,10 @@ class Cart(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-# -----------------------------
-# 🧱 INITIALISATION DE LA DB
-# -----------------------------
+# ============================================================
+# 🧱 INITIALISATION DE LA BASE
+# ============================================================
+
 def init_db():
     with app.app_context():
         db.create_all()
@@ -108,6 +112,7 @@ def init_db():
 
 
 def seed_categories():
+    """Ajoute des catégories par défaut si la table est vide."""
     if Category.query.count() == 0:
         default_categories = [
             Category(name="Peinture"),
@@ -123,6 +128,7 @@ def seed_categories():
 
 
 def seed_demo_user():
+    """Crée un utilisateur démo artiste."""
     if User.query.count() == 0:
         user = User(
             username="artistedemo",
@@ -136,9 +142,10 @@ def seed_demo_user():
         print("✅ Utilisateur démo ajouté.")
 
 
-# -----------------------------
+# ============================================================
 # 🔐 AUTHENTIFICATION
-# -----------------------------
+# ============================================================
+
 @app.route("/api/register", methods=["POST"])
 def register():
     data = request.get_json()
@@ -158,14 +165,11 @@ def register():
     db.session.add(user)
     db.session.commit()
 
-    access_token = create_access_token(identity=user.id)
-    return jsonify({
-        "token": access_token,
-        "user": {
-            "id": user.id, "username": user.username, "email": user.email,
-            "is_artist": user.is_artist, "bio": user.bio
-        }
-    }), 201
+    token = create_access_token(identity=user.id)
+    return jsonify({"token": token, "user": {
+        "id": user.id, "username": user.username, "email": user.email,
+        "is_artist": user.is_artist, "bio": user.bio
+    }}), 201
 
 
 @app.route("/api/login", methods=["POST"])
@@ -180,8 +184,8 @@ def login():
         return jsonify({
             "token": token,
             "user": {
-                "id": user.id, "username": user.username, "email": user.email,
-                "is_artist": user.is_artist, "bio": user.bio
+                "id": user.id, "username": user.username,
+                "email": user.email, "is_artist": user.is_artist, "bio": user.bio
             }
         }), 200
 
@@ -196,26 +200,29 @@ def get_current_user():
     if not user:
         return jsonify({"error": "Utilisateur non trouvé"}), 404
     return jsonify({
-        "id": user.id, "username": user.username, "email": user.email,
-        "is_artist": user.is_artist, "bio": user.bio
+        "id": user.id, "username": user.username,
+        "email": user.email, "is_artist": user.is_artist, "bio": user.bio
     }), 200
 
 
-# -----------------------------
-# 🎨 ARTWORKS
-# -----------------------------
+# ============================================================
+# 🎨 GESTION DES ŒUVRES
+# ============================================================
+
 @app.route("/api/artworks", methods=["GET"])
 def get_artworks():
-    artworks = Artwork.query.all()
+    artworks = Artwork.query.order_by(Artwork.created_at.desc()).all()
     return jsonify([{
         "id": a.id,
         "title": a.title,
         "description": a.description,
         "price": a.price,
         "image_url": a.image_url,
-        "artist_name": a.artist.username,
+        "artist_id": a.artist_id,
+        "artist_name": a.artist.username if a.artist else None,
         "likes_count": len(a.likes),
-        "is_sold": a.is_sold
+        "is_sold": a.is_sold,
+        "created_at": a.created_at.isoformat()
     } for a in artworks]), 200
 
 
@@ -225,31 +232,73 @@ def create_artwork():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     if not user or not user.is_artist:
-        return jsonify({"error": "Accès refusé"}), 403
+        return jsonify({"error": "Accès refusé : seul un artiste peut publier une œuvre."}), 403
 
     data = request.get_json()
+    if not data.get("title") or not data.get("price"):
+        return jsonify({"error": "Le titre et le prix sont obligatoires."}), 400
+
     artwork = Artwork(
         title=data["title"],
         description=data.get("description", ""),
-        price=data["price"],
+        price=float(data["price"]),
         image_url=data.get("image_url", ""),
         artist_id=user_id
     )
     db.session.add(artwork)
     db.session.commit()
-    return jsonify({"message": "Œuvre créée avec succès"}), 201
+    return jsonify({"message": "✅ Œuvre publiée avec succès"}), 201
 
 
-# -----------------------------
+@app.route("/api/artworks/<int:artwork_id>", methods=["PUT"])
+@jwt_required()
+def update_artwork(artwork_id):
+    user_id = get_jwt_identity()
+    artwork = Artwork.query.get_or_404(artwork_id)
+
+    if artwork.artist_id != user_id:
+        return jsonify({"error": "Accès refusé"}), 403
+
+    data = request.get_json()
+    artwork.title = data.get("title", artwork.title)
+    artwork.description = data.get("description", artwork.description)
+    artwork.price = float(data.get("price", artwork.price))
+    artwork.image_url = data.get("image_url", artwork.image_url)
+    db.session.commit()
+
+    return jsonify({"message": "✅ Œuvre mise à jour"}), 200
+
+
+@app.route("/api/artworks/<int:artwork_id>", methods=["DELETE"])
+@jwt_required()
+def delete_artwork(artwork_id):
+    user_id = get_jwt_identity()
+    artwork = Artwork.query.get_or_404(artwork_id)
+
+    if artwork.artist_id != user_id:
+        return jsonify({"error": "Accès refusé"}), 403
+
+    Like.query.filter_by(artwork_id=artwork_id).delete()
+    Comment.query.filter_by(artwork_id=artwork_id).delete()
+    Cart.query.filter_by(artwork_id=artwork_id).delete()
+
+    db.session.delete(artwork)
+    db.session.commit()
+    return jsonify({"message": "🗑️ Œuvre supprimée avec succès"}), 200
+
+
+# ============================================================
 # 🛒 PANIER / CHECKOUT
-# -----------------------------
+# ============================================================
+
 @app.route("/api/cart", methods=["GET"])
 @jwt_required()
 def get_cart():
     user_id = get_jwt_identity()
     items = Cart.query.filter_by(user_id=user_id).all()
     return jsonify([{
-        "id": c.id, "title": c.artwork.title, "price": c.artwork.price, "image_url": c.artwork.image_url
+        "id": c.id, "title": c.artwork.title,
+        "price": c.artwork.price, "image_url": c.artwork.image_url
     } for c in items]), 200
 
 
@@ -275,7 +324,7 @@ def remove_from_cart(item_id):
         return jsonify({"error": "Article introuvable"}), 404
     db.session.delete(item)
     db.session.commit()
-    return jsonify({"message": "Supprimé du panier"}), 200
+    return jsonify({"message": "Article retiré du panier"}), 200
 
 
 @app.route("/api/cart/checkout", methods=["POST"])
@@ -292,42 +341,37 @@ def checkout():
     return jsonify({"message": "Paiement réussi 🎉"}), 200
 
 
-# -----------------------------
+# ============================================================
 # 📊 CATÉGORIES
-# -----------------------------
+# ============================================================
+
 @app.route("/api/categories", methods=["GET"])
 def get_categories():
-    try:
-        categories = Category.query.all()
-        return jsonify([{"id": c.id, "name": c.name} for c in categories]), 200
-    except Exception as e:
-        print("❌ Erreur dans /api/categories :", e)
-        return jsonify({"error": str(e)}), 500
+    categories = Category.query.all()
+    return jsonify([{"id": c.id, "name": c.name} for c in categories]), 200
 
 
-# -----------------------------
-# 🏠 ACCUEIL (Render)
-# -----------------------------
+# ============================================================
+# 🌐 PAGE D’ACCUEIL (Render Test)
+# ============================================================
+
 @app.route('/')
 def home():
     return jsonify({
-        "message": "✅ Serveur ArtGens.HT est en ligne sur Render",
+        "message": "✅ Serveur ArtGens.HT en ligne sur Render",
         "status": "success",
-        "routes_disponibles": [
-            "/api/register",
-            "/api/login",
-            "/api/me",
-            "/api/artworks",
-            "/api/categories",
-            "/api/cart",
-            "/api/cart/checkout"
+        "routes": [
+            "/api/register", "/api/login", "/api/me",
+            "/api/artworks", "/api/categories",
+            "/api/cart", "/api/cart/checkout"
         ]
     }), 200
 
 
-# -----------------------------
-# 🚀 DÉMARRAGE (Render)
-# -----------------------------
+# ============================================================
+# 🚀 LANCEMENT DU SERVEUR
+# ============================================================
+
 if __name__ == "__main__":
     init_db()
     port = int(os.environ.get("PORT", 5555))
