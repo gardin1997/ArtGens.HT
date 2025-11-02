@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/ArtGens.HT/static/css/main.bd9e8856.css",
-    "main.js": "/ArtGens.HT/static/js/main.7bf2892c.js",
-    "static/js/453.cd721b28.chunk.js": "/ArtGens.HT/static/js/453.cd721b28.chunk.js",
-    "index.html": "/ArtGens.HT/index.html",
-    "main.bd9e8856.css.map": "/ArtGens.HT/static/css/main.bd9e8856.css.map",
-    "main.7bf2892c.js.map": "/ArtGens.HT/static/js/main.7bf2892c.js.map",
-    "453.cd721b28.chunk.js.map": "/ArtGens.HT/static/js/453.cd721b28.chunk.js.map"
+    "main.css": "/static/css/main.bd9e8856.css",
+    "main.js": "/static/js/main.ee977370.js",
+    "static/js/453.cd721b28.chunk.js": "/static/js/453.cd721b28.chunk.js",
+    "index.html": "/index.html",
+    "main.bd9e8856.css.map": "/static/css/main.bd9e8856.css.map",
+    "main.ee977370.js.map": "/static/js/main.ee977370.js.map",
+    "453.cd721b28.chunk.js.map": "/static/js/453.cd721b28.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.bd9e8856.css",
-    "static/js/main.7bf2892c.js"
+    "static/js/main.ee977370.js"
   ]
 }
