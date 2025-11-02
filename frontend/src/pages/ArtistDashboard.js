@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useArtwork } from "../context/ArtworkContext";
+import { useArtwork, API_URL } from "../context/ArtworkContext"; // 🟢 Correction : ajout de API_URL
+import axios from "axios"; // 🟢 Correction : import direct d’Axios pour suppression/modif via backend
 
 function ArtistDashboard() {
   const {
@@ -7,10 +8,8 @@ function ArtistDashboard() {
     artworks,
     fetchArtworks,
     addArtwork,
-    deleteArtwork,
-    updateArtwork,
     fetchCategories,
-  } = useArtwork();
+  } = useArtwork(); // 🟢 Correction : deleteArtwork & updateArtwork retirés (on gère axios directement ici)
 
   const [newArtwork, setNewArtwork] = useState({
     title: "",
@@ -49,6 +48,9 @@ function ArtistDashboard() {
     }));
   };
 
+  // =======================================================
+  // 🟢 Correction : Ajout d’une validation et d’un appel backend propre
+  // =======================================================
   const handleAddArtwork = async () => {
     if (!newArtwork.title || !newArtwork.price || !newArtwork.image_url) {
       setMessage("⚠️ Veuillez remplir tous les champs obligatoires !");
@@ -71,14 +73,48 @@ function ArtistDashboard() {
     }
   };
 
+  // =======================================================
+  // 🔴 Correction : gestion de la suppression avec axios (backend)
+  // =======================================================
   const handleDeleteArtwork = async (artworkId) => {
     if (!window.confirm("Supprimer cette œuvre ?")) return;
-    const response = await deleteArtwork(artworkId);
-    if (response.success) {
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_URL}/artworks/${artworkId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setMessage("🗑️ Œuvre supprimée !");
       fetchArtworks();
-    } else {
-      setMessage(`❌ ${response.error}`);
+    } catch (err) {
+      console.error("Erreur suppression :", err);
+      setMessage(`❌ ${err.response?.data?.error || "Erreur serveur"}`);
+    }
+  };
+
+  // =======================================================
+  // 🟡 Correction : mise à jour des œuvres via axios
+  // =======================================================
+  const handleUpdateArtwork = async () => {
+    if (!editingArtwork) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.patch(`${API_URL}/artworks/${editingArtwork.id}`, newArtwork, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMessage("✏️ Œuvre modifiée avec succès !");
+      setEditingArtwork(null);
+      fetchArtworks();
+      setNewArtwork({
+        title: "",
+        price: "",
+        description: "",
+        image_url: "",
+        category_ids: [],
+      });
+    } catch (err) {
+      console.error("Erreur mise à jour :", err);
+      setMessage(`❌ ${err.response?.data?.error || "Erreur serveur"}`);
     }
   };
 
@@ -91,24 +127,6 @@ function ArtistDashboard() {
       image_url: artwork.image_url,
       category_ids: artwork.categories?.map((c) => c.id) || [],
     });
-  };
-
-  const handleUpdateArtwork = async () => {
-    const response = await updateArtwork(editingArtwork.id, newArtwork);
-    if (response.success) {
-      setMessage("✏️ Œuvre modifiée avec succès !");
-      setEditingArtwork(null);
-      fetchArtworks();
-      setNewArtwork({
-        title: "",
-        price: "",
-        description: "",
-        image_url: "",
-        category_ids: [],
-      });
-    } else {
-      setMessage(`❌ ${response.error}`);
-    }
   };
 
   if (!user) {
@@ -241,7 +259,7 @@ function ArtistDashboard() {
   );
 }
 
-
+// ==================== 💅 Styles conservés ====================
 const containerStyle = { padding: "2rem", maxWidth: "900px", margin: "0 auto" };
 const formStyle = { marginBottom: "2rem" };
 const inputStyle = { display: "block", width: "100%", padding: "10px", margin: "10px 0" };
