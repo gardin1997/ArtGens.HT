@@ -253,6 +253,43 @@ def create_artwork():
     db.session.commit()
     return jsonify({"message": "✅ Œuvre publiée avec succès"}), 201
 
+# 🟡 Nouvelle route : modifier une œuvre
+@app.route("/api/artworks/<int:artwork_id>", methods=["PATCH", "PUT"])
+@jwt_required()
+def update_artwork(artwork_id):
+    user_id = get_jwt_identity()
+    artwork = Artwork.query.get_or_404(artwork_id)
+    if artwork.artist_id != user_id:
+        return jsonify({"error": "⛔ Vous ne pouvez modifier que vos propres œuvres."}), 403
+
+    data = request.get_json()
+    if "title" in data:
+        artwork.title = data["title"]
+    if "description" in data:
+        artwork.description = data["description"]
+    if "price" in data:
+        artwork.price = float(data["price"])
+    if "image_url" in data:
+        artwork.image_url = data["image_url"]
+
+    db.session.commit()
+    return jsonify({"message": "✅ Œuvre mise à jour avec succès."}), 200
+
+
+# 🔴 Nouvelle route : supprimer une œuvre
+@app.route("/api/artworks/<int:artwork_id>", methods=["DELETE"])
+@jwt_required()
+def delete_artwork(artwork_id):
+    user_id = get_jwt_identity()
+    artwork = Artwork.query.get_or_404(artwork_id)
+    if artwork.artist_id != user_id:
+        return jsonify({"error": "⛔ Vous ne pouvez supprimer que vos propres œuvres."}), 403
+
+    db.session.delete(artwork)
+    db.session.commit()
+    return jsonify({"message": "🗑️ Œuvre supprimée avec succès."}), 200
+
+
 
 # ============================================================
 # ❤️ LIKE & 💬 COMMENTAIRES
